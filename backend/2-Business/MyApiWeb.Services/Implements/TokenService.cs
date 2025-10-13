@@ -42,6 +42,14 @@ namespace MyApiWeb.Services.Implements
 
         public async Task<(bool IsSuccess, string Error, TokenDto NewTokens)> RefreshTokenAsync(string refreshToken)
         {
+            // Input validation
+            if (string.IsNullOrWhiteSpace(refreshToken))
+                return (false, "Refresh token is required.", null);
+
+            // Prevent overly long input
+            if (refreshToken.Length > 1000)
+                return (false, "Invalid refresh token format.", null);
+
             var dbToken = await _refreshTokenRepo.FirstOrDefaultAsync(rt => rt.Token == refreshToken);
 
             if (dbToken == null)
