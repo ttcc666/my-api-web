@@ -113,6 +113,16 @@ namespace MyApiWeb.Repository
             {
                 // 创建用户表
                 Db.CodeFirst.InitTables(typeof(User), typeof(RefreshToken));
+                
+                // 创建 RBAC 相关表
+                Db.CodeFirst.InitTables(
+                    typeof(Role),
+                    typeof(Permission),
+                    typeof(UserRole),
+                    typeof(RolePermission),
+                    typeof(UserPermission)
+                );
+                
                 _logger.LogInformation("数据库表创建成功");
             }
             catch (Exception ex)

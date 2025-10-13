@@ -39,7 +39,8 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
   HomeOutline as HomeIcon,
-  PersonOutline as UserIcon
+  PersonOutline as UserIcon,
+  ShieldCheckmarkOutline as ShieldIcon
 } from '@vicons/ionicons5'
 
 const collapsed = ref(false)
@@ -57,9 +58,16 @@ const menuOptions = [
     icon: renderIcon(HomeIcon)
   },
   {
-    label: () => h(RouterLink, { to: '/users' }, { default: () => '用户管理' }),
-    key: 'users',
-    icon: renderIcon(UserIcon)
+    label: () => h(RouterLink, { to: '/admin/users' }, { default: () => '用户管理' }),
+    key: 'user-management',
+    icon: renderIcon(UserIcon),
+    show: authStore.hasPermission('user:view')
+  },
+  {
+    label: () => h(RouterLink, { to: '/admin/roles' }, { default: () => '角色管理' }),
+    key: 'role-management',
+    icon: renderIcon(ShieldIcon),
+    show: authStore.hasPermission('role:view')
   }
 ]
 

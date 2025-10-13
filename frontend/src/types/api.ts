@@ -41,3 +41,32 @@ export interface ApiError {
   message: string
   status?: number
 }
+
+// 权限和角色相关类型
+export interface Permission {
+  id: string
+  name: string
+  displayName: string
+  description?: string
+  group?: string
+  isEnabled: boolean
+  creationTime: string
+}
+
+export interface Role {
+  id: string
+  name: string
+  description?: string
+  isSystem: boolean
+  isEnabled: boolean
+  creationTime: string
+  permissions: Permission[]
+}
+
+export interface UserPermissionInfo {
+  userId: string
+  username: string
+  roles: Role[]
+  directPermissions: Permission[]
+  effectivePermissions: Permission[]
+}

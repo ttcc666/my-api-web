@@ -1,6 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref, computed, readonly } from 'vue'
 import { defineStore } from 'pinia'
-import type { User, UserLoginDto, UserRegisterDto } from '@/types/api'
+import type { User, UserLoginDto, UserRegisterDto, UserPermissionInfo } from '@/types/api'
 import UserApi from '@/api/user'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -10,10 +10,33 @@ export const useAuthStore = defineStore('auth', () => {
   const refreshToken = ref<string | null>(localStorage.getItem('refreshToken'))
   const loading = ref(false)
   const error = ref<string | null>(null)
+  
+  // 权限相关状态
+  const userPermissions = ref<UserPermissionInfo | null>(null)
+  const permissions = ref<string[]>([])
+  const roles = ref<string[]>([])
+  const permissionsLoaded = ref(false) // 增加一个状态来标记权限是否已加载
 
   // 计算属性
   const isAuthenticated = computed(() => !!token.value)
   const username = computed(() => user.value?.username || '')
+  
+  // 权限检查计算属性
+  const hasPermission = computed(() => (permission: string) => {
+    return permissions.value.includes(permission)
+  })
+  
+  const hasRole = computed(() => (role: string) => {
+    return roles.value.includes(role)
+  })
+  
+  const hasAnyPermission = computed(() => (permissionList: string[]) => {
+    return permissionList.some(permission => permissions.value.includes(permission))
+  })
+  
+  const hasAllPermissions = computed(() => (permissionList: string[]) => {
+    return permissionList.every(permission => permissions.value.includes(permission))
+  })
 
   // 清除错误
   const clearError = () => {
@@ -52,6 +75,9 @@ export const useAuthStore = defineStore('auth', () => {
       const userData = await UserApi.getProfile()
       setUser(userData)
 
+      // 登录成功后加载用户权限
+      await loadUserPermissions()
+
       return true
     } catch (err: unknown) {
       error.value = (err as Error).message || '登录失败'
@@ -77,14 +103,52 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // 权限相关方法
+  const setUserPermissions = (permissionInfo: UserPermissionInfo) => {
+    if (!permissionInfo) return;
+    userPermissions.value = permissionInfo;
+    permissions.value = (permissionInfo.effectivePermissions || []).map(p => p.name);
+    roles.value = (permissionInfo.roles || []).map(r => r.name);
+  }
+
+  const clearUserPermissions = () => {
+    userPermissions.value = null
+    permissions.value = []
+    roles.value = []
+    permissionsLoaded.value = false // 清除权限时重置状态
+  }
+
+  const loadUserPermissions = async () => {
+    // 如果权限已加载或用户未认证，则直接返回，避免重复请求
+    if (permissionsLoaded.value || !isAuthenticated.value) return
+
+    try {
+      loading.value = true
+      const permissionInfo = await UserApi.getUserPermissions()
+      if (permissionInfo) {
+        setUserPermissions(permissionInfo)
+        permissionsLoaded.value = true // 标记权限已成功加载
+      }
+    } catch (err) {
+      console.error('加载用户权限失败:', err)
+      error.value = '加载用户权限失败'
+      permissionsLoaded.value = false // 加载失败时也应重置状态
+      throw err // 重新抛出错误，以便路由守卫可以捕获
+    } finally {
+      loading.value = false
+    }
+  }
+
   // 登出
   const logout = () => {
     user.value = null
     token.value = null
     refreshToken.value = null
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('user')
+    clearUserPermissions()
+
+    // 清除所有本地存储，确保完全登出
+    localStorage.clear()
+    
     // 可以在这里调用后端的 logout 接口，使其 RefreshToken 失效
     // UserApi.logout({ refreshToken: refreshToken.value })
   }
@@ -131,19 +195,29 @@ export const useAuthStore = defineStore('auth', () => {
         // 没有用户信息，重新获取
         await fetchUserInfo()
       }
+      // 初始化时也加载用户权限
+      await loadUserPermissions()
     }
   }
 
   return {
     // 状态
-    user,
-    token, // 实际为 accessToken
-    refreshToken,
-    loading,
-    error,
+    user: readonly(user),
+    token: readonly(token),
+    refreshToken: readonly(refreshToken),
+    loading: readonly(loading),
+    error: readonly(error),
+    userPermissions: readonly(userPermissions),
+    permissions: readonly(permissions),
+    roles: readonly(roles),
+    permissionsLoaded: readonly(permissionsLoaded),
     // 计算属性
     isAuthenticated,
     username,
+    hasPermission,
+    hasRole,
+    hasAnyPermission,
+    hasAllPermissions,
     // 方法
     clearError,
     setUser,
@@ -152,6 +226,9 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     fetchUserInfo,
-    initializeAuth
+    initializeAuth,
+    setUserPermissions,
+    clearUserPermissions,
+    loadUserPermissions
   }
 })

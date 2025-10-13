@@ -9,14 +9,17 @@ namespace MyApiWeb.Api.Controllers
     public class UsersController : ApiControllerBase<IUserService, User, string>
     {
         private readonly ITokenService _tokenService;
+        private readonly IRoleService _roleService;
 
         public UsersController(
             ILogger<UsersController> logger,
             IUserService userService,
-            ITokenService tokenService)
+            ITokenService tokenService,
+            IRoleService roleService)
             : base(logger, userService)
         {
             _tokenService = tokenService;
+            _roleService = roleService;
         }
 
         /// <summary>
@@ -207,6 +210,83 @@ namespace MyApiWeb.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "删除用户失败");
+                return Error("服务器内部错误");
+            }
+        }
+
+        /// <summary>
+        /// 获取用户的角色列表
+        /// </summary>
+        /// <param name="id">用户ID</param>
+        /// <returns>角色列表</returns>
+        [HttpGet("{id}/roles")]
+        public async Task<IActionResult> GetUserRoles(string id)
+        {
+            try
+            {
+                var roles = await _roleService.GetUserRolesAsync(id);
+                return Success(roles);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取用户角色失败");
+                return Error("服务器内部错误");
+            }
+        }
+
+        /// <summary>
+        /// 为用户分配角色
+        /// </summary>
+        /// <param name="id">用户ID</param>
+        /// <param name="assignRolesDto">角色分配请求</param>
+        /// <returns>分配结果</returns>
+        [HttpPut("{id}/roles")]
+        public async Task<IActionResult> AssignRolesToUser(string id, [FromBody] AssignUserRolesDto assignRolesDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var result = await _roleService.AssignRolesToUserAsync(id, assignRolesDto);
+                if (result)
+                {
+                    return Success("角色分配成功");
+                }
+
+                return Error("角色分配失败", 400);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "分配用户角色失败");
+                return Error("服务器内部错误");
+            }
+        }
+
+        /// <summary>
+        /// 移除用户的角色
+        /// </summary>
+        /// <param name="id">用户ID</param>
+        /// <param name="roleId">角色ID</param>
+        /// <returns>移除结果</returns>
+        [HttpDelete("{id}/roles/{roleId}")]
+        public async Task<IActionResult> RemoveRoleFromUser(string id, string roleId)
+        {
+            try
+            {
+                var result = await _roleService.RemoveRoleFromUserAsync(id, roleId);
+                if (result)
+                {
+                    return Success("角色移除成功");
+                }
+
+                return Error("角色移除失败", 400);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "移除用户角色失败");
                 return Error("服务器内部错误");
             }
         }

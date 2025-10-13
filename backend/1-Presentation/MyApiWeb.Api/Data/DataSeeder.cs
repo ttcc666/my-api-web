@@ -10,9 +10,16 @@ namespace MyApiWeb.Api.Data
             using (var serviceScope = app.ApplicationServices.CreateScope())
             {
                 var userService = serviceScope.ServiceProvider.GetService<IUserService>();
+                var rbacSeeder = serviceScope.ServiceProvider.GetService<RbacDataSeeder>();
+                
                 if (userService != null)
                 {
                     SeedAdminUser(userService).Wait();
+                }
+                
+                if (rbacSeeder != null)
+                {
+                    rbacSeeder.SeedAsync().Wait();
                 }
             }
         }
@@ -29,8 +36,7 @@ namespace MyApiWeb.Api.Data
                     RealName = "Administrator",
                     IsActive = true
                 };
-                // In a real application, you would also assign roles here.
-                // For now, we just create the user.
+                
                 await userService.RegisterAsync(new Models.DTOs.UserRegisterDto
                 {
                     Username = adminUser.Username,

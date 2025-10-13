@@ -24,6 +24,15 @@ namespace MyApiWeb.Services.Modules
             builder.RegisterType<TokenService>()
                    .As<ITokenService>()
                    .InstancePerLifetimeScope();
+
+            // 注册 RBAC 相关服务
+            builder.RegisterType<RoleService>()
+                   .As<IRoleService>()
+                   .InstancePerLifetimeScope();
+
+            builder.RegisterType<PermissionService>()
+                   .As<IPermissionService>()
+                   .InstancePerLifetimeScope();
  
              // 这里可以注册其他服务
              // 例如：builder.RegisterType<ProductService>().As<IProductService>();

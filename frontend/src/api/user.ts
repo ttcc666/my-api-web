@@ -1,5 +1,5 @@
 import apiClient from '@/utils/request'
-import type { User, UserLoginDto, UserRegisterDto, UserUpdateDto, ApiResponse } from '@/types/api'
+import type { User, UserLoginDto, UserRegisterDto, UserUpdateDto, ApiResponse, UserPermissionInfo } from '@/types/api'
 
 /**
  * 用户API服务
@@ -9,40 +9,48 @@ export class UserApi {
    * 用户登录
    */
   static async login(loginData: UserLoginDto): Promise<{ accessToken: string; refreshToken: string }> {
-    const response = await apiClient.post<{ accessToken: string; refreshToken: string }>('/users/login', loginData)
-    return response.data || { accessToken: '', refreshToken: '' }
+    // 拦截器已经处理了数据解包，所以这里直接返回 Promise 的结果
+    return apiClient.post('/users/login', loginData);
   }
 
   /**
    * 用户注册
    */
   static async register(registerData: UserRegisterDto): Promise<User> {
-    const response = await apiClient.post<User>('/users/register', registerData)
-    return response.data || {} as User
+    // 对于 register，同样直接返回，让拦截器处理
+    return apiClient.post('/users/register', registerData);
   }
 
   /**
    * 获取当前用户信息
    */
   static async getProfile(): Promise<User> {
-    const response = await apiClient.get<User>('/users/profile')
-    return response.data || {} as User
+    // 对于 getProfile，同样直接返回
+    return apiClient.get('/users/profile');
+  }
+
+  /**
+   * 获取当前用户的权限信息
+   */
+  static async getUserPermissions(): Promise<UserPermissionInfo> {
+    // 对于 getUserPermissions，同样直接返回
+    return apiClient.get('/auth/me/permissions');
   }
 
   /**
    * 获取所有用户列表
    */
   static async getAllUsers(): Promise<{ users: User[]; total: number }> {
-    const response = await apiClient.get<{ users: User[]; total: number }>('/users')
-    return response.data || { users: [], total: 0 }
+    // 对于 getAllUsers，同样直接返回
+    return apiClient.get('/users');
   }
 
   /**
    * 根据ID获取用户
    */
   static async getUserById(id: number): Promise<User> {
-    const response = await apiClient.get<User>(`/users/${id}`)
-    return response.data || {} as User
+    // 对于 getUserById，同样直接返回
+    return apiClient.get(`/users/${id}`);
   }
 
   /**

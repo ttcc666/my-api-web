@@ -20,6 +20,11 @@ builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
     // 注册自定义模块
     containerBuilder.RegisterModule<RepositoryModule>();
     containerBuilder.RegisterModule<ServiceModule>();
+    
+    // 注册 RBAC 数据种子服务
+    containerBuilder.RegisterType<MyApiWeb.Api.Data.RbacDataSeeder>()
+                   .AsSelf()
+                   .InstancePerLifetimeScope();
 });
 
 // 添加服务到容器
