@@ -52,7 +52,15 @@ import {
 } from 'naive-ui'
 import UserApi from '@/api/user'
 import RoleApi from '@/api/role'
-import type { UserDto, RoleDto, PermissionDto } from '@/types/api'
+import { UsersApi } from '@/api/users'
+import { PermissionsApi } from '@/api/permissions'
+import type {
+  UserDto,
+  RoleDto,
+  PermissionDto,
+  AssignUserRolesDto,
+  AssignUserPermissionsDto,
+} from '@/types/api'
 
 // 类型别名以保持兼容性
 type User = UserDto
@@ -161,28 +169,52 @@ async function fetchRolesAndPermissions() {
   }
 }
 
-function handleEdit(user: UserWithRolesAndPermissions) {
-  // 在实际应用中，需要通过API获取用户的角色和直接权限
-  // 这里暂时使用模拟数据
-  currentUser.value = {
-    ...user,
-    roleIds: user.roles.map((r) => r.id),
-    directPermissionIds: user.directPermissions.map((p) => p.id),
+async function handleEdit(user: UserWithRolesAndPermissions) {
+  try {
+    loading.value = true
+    // 从后端获取用户的完整权限信息
+    const userPermissions = await PermissionsApi.getUserPermissions(user.id)
+
+    currentUser.value = {
+      ...user,
+      roleIds: userPermissions.roles.map((r) => r.id),
+      directPermissionIds: userPermissions.directPermissions.map((p) => p.id),
+      roles: userPermissions.roles,
+      directPermissions: userPermissions.directPermissions,
+    }
+    showModal.value = true
+  } catch (error) {
+    console.error('获取用户权限信息失败:', error)
+    message.error('获取用户权限信息失败')
+  } finally {
+    loading.value = false
   }
-  showModal.value = true
 }
 
 async function handleSubmit() {
   try {
-    // 在这里调用API来更新用户的角色和权限
-    // await UserApi.updateUserRoles(currentUser.value.id, currentUser.value.roleIds)
-    // await UserApi.updateUserDirectPermissions(currentUser.value.id, currentUser.value.directPermissionIds)
+    loading.value = true
+
+    // 更新用户角色
+    const rolesData: AssignUserRolesDto = {
+      roleIds: currentUser.value.roleIds,
+    }
+    await UsersApi.assignUserRoles(currentUser.value.id, rolesData)
+
+    // 更新用户直接权限
+    const permissionsData: AssignUserPermissionsDto = {
+      permissionIds: currentUser.value.directPermissionIds,
+    }
+    await PermissionsApi.assignUserPermissions(currentUser.value.id, permissionsData)
+
     message.success('更新成功')
     showModal.value = false
     await fetchUsers() // 重新加载用户数据
   } catch (error) {
     console.error('更新失败:', error)
     message.error('更新失败')
+  } finally {
+    loading.value = false
   }
 }
 
