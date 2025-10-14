@@ -44,22 +44,22 @@ namespace MyApiWeb.Services.Implements
         {
             // Input validation
             if (string.IsNullOrWhiteSpace(refreshToken))
-                return (false, "Refresh token is required.", null);
+                return (false, "Refresh token is required.", null!);
 
             // Prevent overly long input
             if (refreshToken.Length > 1000)
-                return (false, "Invalid refresh token format.", null);
+                return (false, "Invalid refresh token format.", null!);
 
             var dbToken = await _refreshTokenRepo.FirstOrDefaultAsync(rt => rt.Token == refreshToken);
 
             if (dbToken == null)
-                return (false, "Invalid refresh token.", null);
+                return (false, "Invalid refresh token.", null!);
 
             if (dbToken.IsUsed || dbToken.IsRevoked)
-                return (false, "Refresh token has been used or revoked.", null);
+                return (false, "Refresh token has been used or revoked.", null!);
 
             if (dbToken.ExpiresAt < DateTime.UtcNow)
-                return (false, "Refresh token has expired.", null);
+                return (false, "Refresh token has expired.", null!);
 
             // 令牌轮换：立即使当前令牌失效
             dbToken.IsUsed = true;
@@ -67,10 +67,10 @@ namespace MyApiWeb.Services.Implements
 
             var user = await _userRepo.GetByIdAsync(dbToken.UserId);
             if (user == null)
-                return (false, "User not found.", null);
+                return (false, "User not found.", null!);
 
             var newTokens = await GenerateTokensAsync(user);
-            return (true, null, newTokens);
+            return (true, string.Empty, newTokens);
         }
 
         public async Task<bool> RevokeTokenAsync(string refreshToken)
@@ -100,7 +100,8 @@ namespace MyApiWeb.Services.Implements
                 // new Claim(ClaimTypes.Role, user.Role)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Secret"]));
+            var secret = _configuration["JwtSettings:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured.");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["JwtSettings:AccessTokenExpirationMinutes"]));
 

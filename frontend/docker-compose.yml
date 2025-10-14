@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # 前端服务
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my-api-web-frontend
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - app-network
+    restart: unless-stopped
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  app-network:
+    driver: bridge
+
+# 注意：请根据实际情况配置后端服务
+# backend:
+#   image: your-backend-image:latest
+#   container_name: my-api-web-backend
+#   ports:
+#     - "5000:5000"
+#   networks:
+#     - app-network

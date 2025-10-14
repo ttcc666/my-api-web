@@ -1,9 +1,14 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MyApiWeb.Models.DTOs;
 using MyApiWeb.Models.Exceptions;
 
-namespace MyApiWeb.Api.Middlewares
+namespace MyApiWeb.Infrastructure.Middlewares
 {
+    /// <summary>
+    /// 全局异常处理中间件
+    /// </summary>
     public class GlobalExceptionMiddleware
     {
         private readonly RequestDelegate _next;

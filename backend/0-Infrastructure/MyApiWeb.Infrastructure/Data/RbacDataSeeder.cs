@@ -1,16 +1,22 @@
+using Microsoft.Extensions.Logging;
 using MyApiWeb.Models.Entities;
 using MyApiWeb.Repository;
 using SqlSugar;
 
-namespace MyApiWeb.Api.Data
+namespace MyApiWeb.Infrastructure.Data
 {
     /// <summary>
-    /// RBAC 数据种子类
+    /// RBAC 权限管理数据种子类
     /// </summary>
     public class RbacDataSeeder
     {
         private readonly SqlSugarDbContext _dbContext;
         private readonly ILogger<RbacDataSeeder> _logger;
+
+        // 固定的角色 ID（便于关联）
+        private const string SuperAdminRoleId = "super-admin-role-id";
+        private const string AdminRoleId = "admin-role-id";
+        private const string UserRoleId = "user-role-id";
 
         public RbacDataSeeder(SqlSugarDbContext dbContext, ILogger<RbacDataSeeder> logger)
         {
@@ -28,7 +34,7 @@ namespace MyApiWeb.Api.Data
                 await SeedPermissionsAsync();
                 await SeedRolesAsync();
                 await SeedSuperAdminAsync();
-                
+
                 _logger.LogInformation("RBAC 数据种子初始化完成");
             }
             catch (Exception ex)
@@ -39,10 +45,18 @@ namespace MyApiWeb.Api.Data
         }
 
         /// <summary>
-        /// 初始化权限数据
+        /// 初始化权限数据（批量插入）
         /// </summary>
         private async Task SeedPermissionsAsync()
         {
+            // 检查是否已有权限数据
+            var existingCount = await _dbContext.Queryable<Permission>().CountAsync();
+            if (existingCount > 0)
+            {
+                _logger.LogInformation("权限数据已存在，跳过初始化（共 {Count} 条）", existingCount);
+                return;
+            }
+
             var permissions = new List<Permission>
             {
                 // 用户管理权限
@@ -76,103 +90,103 @@ namespace MyApiWeb.Api.Data
                 new Permission { Id = Guid.NewGuid().ToString(), Name = "dashboard:statistics", DisplayName = "查看统计", Description = "查看系统统计信息", Group = "仪表板" }
             };
 
-            foreach (var permission in permissions)
-            {
-                var exists = await _dbContext.Queryable<Permission>()
-                    .Where(p => p.Name == permission.Name)
-                    .AnyAsync();
+            // 批量插入权限
+            await _dbContext.Db.Insertable(permissions).ExecuteCommandAsync();
 
-                if (!exists)
-                {
-                    await _dbContext.Insertable(permission).ExecuteCommandAsync();
-                    _logger.LogInformation("创建权限: {PermissionName}", permission.Name);
-                }
-            }
+            _logger.LogInformation("批量创建了 {Count} 个权限", permissions.Count);
         }
 
         /// <summary>
-        /// 初始化角色数据
+        /// 初始化角色数据（批量插入）
         /// </summary>
         private async Task SeedRolesAsync()
         {
-            var superAdminRoleId = "super-admin-role-id";
-            var adminRoleId = Guid.NewGuid().ToString();
-            var userRoleId = Guid.NewGuid().ToString();
+            // 检查是否已有角色数据
+            var existingCount = await _dbContext.Queryable<Role>().CountAsync();
+            if (existingCount > 0)
+            {
+                _logger.LogInformation("角色数据已存在，跳过初始化（共 {Count} 条）", existingCount);
+                // 仍然需要确保超级管理员有所有权限
+                await AssignAllPermissionsToSuperAdminAsync();
+                return;
+            }
 
             var roles = new List<Role>
             {
-                new Role 
-                { 
-                    Id = superAdminRoleId, 
-                    Name = "超级管理员", 
-                    Description = "系统超级管理员，拥有所有权限", 
-                    IsSystem = true, 
-                    IsEnabled = true 
+                new Role
+                {
+                    Id = SuperAdminRoleId,
+                    Name = "超级管理员",
+                    Description = "系统超级管理员，拥有所有权限",
+                    IsSystem = true,
+                    IsEnabled = true
                 },
-                new Role 
-                { 
-                    Id = adminRoleId, 
-                    Name = "管理员", 
-                    Description = "系统管理员，拥有大部分管理权限", 
-                    IsSystem = false, 
-                    IsEnabled = true 
+                new Role
+                {
+                    Id = AdminRoleId,
+                    Name = "管理员",
+                    Description = "系统管理员，拥有大部分管理权限",
+                    IsSystem = false,
+                    IsEnabled = true
                 },
-                new Role 
-                { 
-                    Id = userRoleId, 
-                    Name = "普通用户", 
-                    Description = "普通用户，拥有基础权限", 
-                    IsSystem = false, 
-                    IsEnabled = true 
+                new Role
+                {
+                    Id = UserRoleId,
+                    Name = "普通用户",
+                    Description = "普通用户，拥有基础权限",
+                    IsSystem = false,
+                    IsEnabled = true
                 }
             };
 
-            foreach (var role in roles)
-            {
-                var exists = await _dbContext.Queryable<Role>()
-                    .Where(r => r.Name == role.Name)
-                    .AnyAsync();
+            // 批量插入角色
+            await _dbContext.Db.Insertable(roles).ExecuteCommandAsync();
 
-                if (!exists)
-                {
-                    await _dbContext.Insertable(role).ExecuteCommandAsync();
-                    _logger.LogInformation("创建角色: {RoleName}", role.Name);
-                }
-            }
+            _logger.LogInformation("批量创建了 {Count} 个角色", roles.Count);
 
             // 为超级管理员角色分配所有权限
-            await AssignAllPermissionsToSuperAdminAsync(superAdminRoleId);
+            await AssignAllPermissionsToSuperAdminAsync();
         }
 
         /// <summary>
-        /// 为超级管理员角色分配所有权限
+        /// 为超级管理员角色分配所有权限（批量插入）
         /// </summary>
-        private async Task AssignAllPermissionsToSuperAdminAsync(string superAdminRoleId)
+        private async Task AssignAllPermissionsToSuperAdminAsync()
         {
             var allPermissions = await _dbContext.Queryable<Permission>().ToListAsync();
-            var systemUserId = "system";
 
-            foreach (var permission in allPermissions)
+            // 获取已分配的权限
+            var existingPermissionIds = await _dbContext.Queryable<RolePermission>()
+                .Where(rp => rp.RoleId == SuperAdminRoleId)
+                .Select(rp => rp.PermissionId)
+                .ToListAsync();
+
+            // 过滤出未分配的权限
+            var newPermissions = allPermissions
+                .Where(p => !existingPermissionIds.Contains(p.Id))
+                .ToList();
+
+            if (newPermissions.Count == 0)
             {
-                var exists = await _dbContext.Queryable<RolePermission>()
-                    .Where(rp => rp.RoleId == superAdminRoleId && rp.PermissionId == permission.Id)
-                    .AnyAsync();
-
-                if (!exists)
-                {
-                    var rolePermission = new RolePermission
-                    {
-                        RoleId = superAdminRoleId,
-                        PermissionId = permission.Id,
-                        AssignedBy = systemUserId,
-                        AssignedTime = DateTimeOffset.Now
-                    };
-
-                    await _dbContext.Insertable(rolePermission).ExecuteCommandAsync();
-                }
+                _logger.LogInformation("超级管理员角色已拥有所有权限");
+                return;
             }
 
-            _logger.LogInformation("为超级管理员角色分配了所有权限");
+            var systemUserId = "system";
+
+            // 构建角色权限关联列表
+            var rolePermissions = newPermissions.Select(permission => new RolePermission
+            {
+                RoleId = SuperAdminRoleId,
+                PermissionId = permission.Id,
+                AssignedBy = systemUserId,
+                AssignedTime = DateTimeOffset.Now
+            }).ToList();
+
+            // 批量插入角色权限关联
+            await _dbContext.Db.Insertable(rolePermissions).ExecuteCommandAsync();
+
+            _logger.LogInformation("为超级管理员角色新增了 {Count} 个权限", newPermissions.Count);
         }
 
         /// <summary>
@@ -181,7 +195,6 @@ namespace MyApiWeb.Api.Data
         private async Task SeedSuperAdminAsync()
         {
             var superAdminUsername = "admin";
-            var superAdminRoleId = "super-admin-role-id";
 
             // 检查是否已存在超级管理员用户
             var existingAdmin = await _dbContext.Queryable<User>()
@@ -192,7 +205,7 @@ namespace MyApiWeb.Api.Data
             {
                 // 确保超级管理员拥有超级管理员角色
                 var hasRole = await _dbContext.Queryable<UserRole>()
-                    .Where(ur => ur.UserId == existingAdmin.Id && ur.RoleId == superAdminRoleId)
+                    .Where(ur => ur.UserId == existingAdmin.Id && ur.RoleId == SuperAdminRoleId)
                     .AnyAsync();
 
                 if (!hasRole)
@@ -200,7 +213,7 @@ namespace MyApiWeb.Api.Data
                     var userRole = new UserRole
                     {
                         UserId = existingAdmin.Id,
-                        RoleId = superAdminRoleId,
+                        RoleId = SuperAdminRoleId,
                         AssignedBy = "system",
                         AssignedTime = DateTimeOffset.Now
                     };
@@ -211,7 +224,7 @@ namespace MyApiWeb.Api.Data
             }
             else
             {
-                _logger.LogWarning("未找到用户名为 '{Username}' 的管理员用户，请手动创建并分配超级管理员角色", superAdminUsername);
+                _logger.LogWarning("未找到用户名为 '{Username}' 的管理员用户，请确保先执行管理员用户种子", superAdminUsername);
             }
         }
     }

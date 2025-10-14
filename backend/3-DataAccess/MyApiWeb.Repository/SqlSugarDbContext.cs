@@ -111,9 +111,12 @@ namespace MyApiWeb.Repository
         {
             try
             {
+                // 创建种子历史表（优先创建）
+                Db.CodeFirst.InitTables(typeof(SeedHistory));
+
                 // 创建用户表
                 Db.CodeFirst.InitTables(typeof(User), typeof(RefreshToken));
-                
+
                 // 创建 RBAC 相关表
                 Db.CodeFirst.InitTables(
                     typeof(Role),
@@ -122,7 +125,7 @@ namespace MyApiWeb.Repository
                     typeof(RolePermission),
                     typeof(UserPermission)
                 );
-                
+
                 _logger.LogInformation("数据库表创建成功");
             }
             catch (Exception ex)

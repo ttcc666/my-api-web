@@ -1,8 +1,9 @@
-import axios from 'axios';
+import axios from 'axios'
+import { apiConfig } from '@/config'
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
-  timeout: 10000,
-});
+  baseURL: apiConfig.baseURL,
+  timeout: apiConfig.timeout,
+})
 
-export default apiClient;
+export default apiClient

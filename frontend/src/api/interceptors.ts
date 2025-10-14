@@ -4,8 +4,9 @@ import type { ApiResponse, TokenPayload } from '@/types/api'
 import apiClient from '@/utils/request'
 import { useAuthStore } from '@/stores/auth'
 import { handleError, ApiError, ErrorType, type ErrorInfo } from '@/utils/errorHandler'
+import { apiConfig } from '@/config'
 
-const TOKEN_REFRESH_BUFFER_MS = 30 * 1000
+const TOKEN_REFRESH_BUFFER_MS = apiConfig.tokenRefreshBuffer
 
 // Token 刷新队列管理
 let isRefreshing = false
@@ -60,7 +61,7 @@ async function refreshAccessToken(authStore: ReturnType<typeof useAuthStore>): P
     '/token/refresh',
     { refreshToken: refreshTokenValue },
     {
-      baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+      baseURL: apiConfig.baseURL,
     },
   )
 

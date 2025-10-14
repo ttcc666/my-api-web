@@ -7,16 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.2" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-    <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
-    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+    <!-- 这些包已由 Infrastructure 项目提供,无需重复引用 -->
     <PackageReference Include="SqlSugarCore" Version="5.1.4.166" />
   </ItemGroup>
 
@@ -24,6 +15,7 @@
     <ProjectReference Include="..\..\2-Business\MyApiWeb.Services\MyApiWeb.Services.csproj" />
     <ProjectReference Include="..\..\2-Business\MyApiWeb.Models\MyApiWeb.Models.csproj" />
     <ProjectReference Include="..\..\3-DataAccess\MyApiWeb.Repository\MyApiWeb.Repository.csproj" />
+    <ProjectReference Include="..\..\0-Infrastructure\MyApiWeb.Infrastructure\MyApiWeb.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
