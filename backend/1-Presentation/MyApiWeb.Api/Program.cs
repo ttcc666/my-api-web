@@ -1,13 +1,16 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json;
 using MyApiWeb.Repository.Modules;
 using MyApiWeb.Services.Modules;
 using MyApiWeb.Api.Middlewares;
 using MyApiWeb.Api.Data;
+using MyApiWeb.Models.DTOs;
 using Serilog;
 using Serilog.Events;
 
@@ -60,7 +63,11 @@ try
 
     // 添加服务到容器
     builder.Services.AddHttpContextAccessor();
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+           .ConfigureApiBehaviorOptions(options =>
+           {
+               options.SuppressModelStateInvalidFilter = true;
+           });
 
     // 配置 CORS - 分环境安全策略
     builder.Services.AddCors(options =>
@@ -124,11 +131,54 @@ try
         {
             OnAuthenticationFailed = context =>
             {
-                if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                if (context.Exception is SecurityTokenExpiredException)
                 {
-                    context.Response.Headers.Append("Token-Expired", "true");
+                    context.Response.Headers["Token-Expired"] = "true";
                 }
                 return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                if (context.Response.HasStarted)
+                {
+                    return Task.CompletedTask;
+                }
+
+                if (context.AuthenticateFailure is SecurityTokenExpiredException &&
+                    !context.Response.Headers.ContainsKey("Token-Expired"))
+                {
+                    context.Response.Headers["Token-Expired"] = "true";
+                }
+
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status200OK;
+                context.Response.ContentType = "application/json";
+
+                var response = new ApiResponse<object?>(
+                    false,
+                    StatusCodes.Status401Unauthorized,
+                    string.IsNullOrWhiteSpace(context.ErrorDescription) ? "未授权或令牌无效" : context.ErrorDescription,
+                    null);
+
+                return context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            },
+            OnForbidden = context =>
+            {
+                if (context.Response.HasStarted)
+                {
+                    return Task.CompletedTask;
+                }
+
+                context.Response.StatusCode = StatusCodes.Status200OK;
+                context.Response.ContentType = "application/json";
+
+                var response = new ApiResponse<object?>(
+                    false,
+                    StatusCodes.Status403Forbidden,
+                    "无访问权限",
+                    null);
+
+                return context.Response.WriteAsync(JsonSerializer.Serialize(response));
             }
         };
     });

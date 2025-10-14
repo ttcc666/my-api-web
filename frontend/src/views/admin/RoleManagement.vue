@@ -4,12 +4,7 @@
     <n-button v-permission="'create:role'" type="primary" @click="handleCreate">
       创建角色
     </n-button>
-    <n-data-table
-      :columns="columns"
-      :data="roles"
-      :loading="loading"
-      :pagination="pagination"
-    />
+    <n-data-table :columns="columns" :data="roles" :loading="loading" :pagination="pagination" />
 
     <!-- 创建/编辑角色的模态框 -->
     <n-modal v-model:show="showModal" preset="card" style="width: 600px" :title="modalTitle">
@@ -53,10 +48,14 @@ import {
   useMessage,
   type DataTableColumns,
   type FormInst,
-  type FormRules
+  type FormRules,
 } from 'naive-ui'
 import RoleApi, { type RoleCreateDto, type RoleUpdateDto } from '@/api/role'
-import type { Role, Permission } from '@/types/api'
+import type { RoleDto, PermissionDto } from '@/types/api'
+
+// 类型别名以保持兼容性
+type Role = RoleDto
+type Permission = PermissionDto
 
 const message = useMessage()
 const loading = ref(false)
@@ -74,7 +73,7 @@ const defaultRole = (): Role & { permissionIds: string[] } => ({
   isEnabled: true,
   creationTime: '',
   permissions: [],
-  permissionIds: []
+  permissionIds: [],
 })
 
 const currentRole = ref(defaultRole())
@@ -82,22 +81,22 @@ const currentRole = ref(defaultRole())
 const modalTitle = computed(() => (isEdit.value ? '编辑角色' : '创建角色'))
 
 const permissionOptions = computed(() =>
-  permissions.value.map(p => ({
+  permissions.value.map((p) => ({
     label: p.displayName,
     value: p.id,
-    disabled: false
-  }))
+    disabled: false,
+  })),
 )
 
 const rules: FormRules = {
-  name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }]
+  name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
 }
 
 const columns: DataTableColumns<Role> = [
   { title: '角色名称', key: 'name' },
   { title: '描述', key: 'description' },
-  { title: '系统角色', key: 'isSystem', render: row => (row.isSystem ? '是' : '否') },
-  { title: '状态', key: 'isEnabled', render: row => (row.isEnabled ? '启用' : '禁用') },
+  { title: '系统角色', key: 'isSystem', render: (row) => (row.isSystem ? '是' : '否') },
+  { title: '状态', key: 'isEnabled', render: (row) => (row.isEnabled ? '启用' : '禁用') },
   {
     title: '操作',
     key: 'actions',
@@ -109,9 +108,9 @@ const columns: DataTableColumns<Role> = [
             size: 'small',
             type: 'primary',
             onClick: () => handleEdit(row),
-            'v-permission': "'edit:role'"
+            'v-permission': "'edit:role'",
           },
-          { default: () => '编辑' }
+          { default: () => '编辑' },
         ),
         h(
           NButton,
@@ -121,31 +120,32 @@ const columns: DataTableColumns<Role> = [
             style: 'margin-left: 8px',
             disabled: row.isSystem,
             onClick: () => handleDelete(row),
-            'v-permission': "'delete:role'"
+            'v-permission': "'delete:role'",
           },
-          { default: () => '删除' }
-        )
+          { default: () => '删除' },
+        ),
       ])
-    }
-  }
+    },
+  },
 ]
 
 const pagination = {
-  pageSize: 10
+  pageSize: 10,
 }
 
 async function fetchRoles() {
   try {
     loading.value = true
-    const roleList = await RoleApi.getAllRoles();
-    console.log('Fetched roles:', roleList); // 添加日志
+    const roleList = await RoleApi.getAllRoles()
+    console.log('Fetched roles:', roleList) // 添加日志
     if (Array.isArray(roleList)) {
-      roles.value = roleList;
+      roles.value = roleList
     } else {
-      console.error('Expected an array of roles, but got:', roleList);
-      roles.value = [];
+      console.error('Expected an array of roles, but got:', roleList)
+      roles.value = []
     }
   } catch (error) {
+    console.error('获取角色列表失败:', error)
     message.error('获取角色列表失败')
   } finally {
     loading.value = false
@@ -154,9 +154,10 @@ async function fetchRoles() {
 
 async function fetchPermissions() {
   try {
-    const permissionList = await RoleApi.getAllPermissions();
-    permissions.value = Array.isArray(permissionList) ? permissionList : [];
+    const permissionList = await RoleApi.getAllPermissions()
+    permissions.value = Array.isArray(permissionList) ? permissionList : []
   } catch (error) {
+    console.error('获取权限列表失败:', error)
     message.error('获取权限列表失败')
   }
 }
@@ -171,7 +172,7 @@ function handleEdit(role: Role) {
   isEdit.value = true
   currentRole.value = {
     ...role,
-    permissionIds: role.permissions.map(p => p.id)
+    permissionIds: role.permissions?.map((p) => p.id) || [],
   }
   showModal.value = true
 }
@@ -182,12 +183,13 @@ async function handleDelete(role: Role) {
     message.success('删除成功')
     await fetchRoles()
   } catch (error) {
+    console.error('删除失败:', error)
     message.error('删除失败')
   }
 }
 
 async function handleSubmit() {
-  formRef.value?.validate(async errors => {
+  formRef.value?.validate(async (errors) => {
     if (!errors) {
       try {
         if (isEdit.value) {
@@ -195,7 +197,7 @@ async function handleSubmit() {
             name: currentRole.value.name,
             description: currentRole.value.description,
             isEnabled: currentRole.value.isEnabled,
-            permissionIds: currentRole.value.permissionIds
+            permissionIds: currentRole.value.permissionIds,
           }
           await RoleApi.updateRole(currentRole.value.id, updateData)
           message.success('更新成功')
@@ -203,7 +205,8 @@ async function handleSubmit() {
           const createData: RoleCreateDto = {
             name: currentRole.value.name,
             description: currentRole.value.description,
-            permissionIds: currentRole.value.permissionIds
+            isEnabled: currentRole.value.isEnabled,
+            permissionIds: currentRole.value.permissionIds,
           }
           await RoleApi.createRole(createData)
           message.success('创建成功')
@@ -211,6 +214,7 @@ async function handleSubmit() {
         showModal.value = false
         await fetchRoles()
       } catch (error) {
+        console.error(isEdit.value ? '更新失败' : '创建失败', error)
         message.error(isEdit.value ? '更新失败' : '创建失败')
       }
     }

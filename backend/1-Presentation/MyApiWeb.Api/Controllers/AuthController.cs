@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using MyApiWeb.Api.Helpers;
+using MyApiWeb.Models.DTOs;
 using MyApiWeb.Models.Entities;
 using MyApiWeb.Services.Interfaces;
 using System.Security.Claims;
@@ -23,16 +24,17 @@ namespace MyApiWeb.Api.Controllers
         /// </summary>
         /// <returns>用户权限信息</returns>
         [HttpGet("me/permissions")]
+        [ProducesResponseType(typeof(ApiResponse<UserPermissionInfoDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMyPermissions()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized(ApiResultHelper.Error("用户未认证", 401));
+                return Error("用户未认证", StatusCodes.Status401Unauthorized);
             }
 
             var userPermissions = await _service.GetUserPermissionsAsync(userId);
-            return Ok(ApiResultHelper.Success(userPermissions));
+            return Success(userPermissions);
         }
 
         /// <summary>
@@ -41,16 +43,17 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="permission">权限名称</param>
         /// <returns>权限检查结果</returns>
         [HttpGet("me/permissions/check")]
+        [ProducesResponseType(typeof(ApiResponse<UserPermissionCheckDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CheckMyPermission([FromQuery] string permission)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized(ApiResultHelper.Error("用户未认证", 401));
+                return Error("用户未认证", StatusCodes.Status401Unauthorized);
             }
 
             var result = await _service.CheckUserPermissionAsync(userId, permission);
-            return Ok(ApiResultHelper.Success(result));
+            return Success(result);
         }
 
         /// <summary>
@@ -58,6 +61,7 @@ namespace MyApiWeb.Api.Controllers
         /// </summary>
         /// <returns>用户信息</returns>
         [HttpGet("me")]
+        [ProducesResponseType(typeof(ApiResponse<CurrentUserInfoDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCurrentUser()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -65,20 +69,20 @@ namespace MyApiWeb.Api.Controllers
             
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized(ApiResultHelper.Error("用户未认证", 401));
+                return Error("用户未认证", StatusCodes.Status401Unauthorized);
             }
 
             var userPermissions = await _service.GetUserPermissionsAsync(userId);
             
-            var currentUser = new
+            var currentUser = new CurrentUserInfoDto
             {
                 Id = userId,
-                Username = username,
+                Username = username ?? string.Empty,
                 Permissions = userPermissions.EffectivePermissions.Select(p => p.Name).ToList(),
                 Roles = userPermissions.Roles.Select(r => r.Name).ToList()
             };
 
-            return Ok(ApiResultHelper.Success(currentUser));
+            return Success(currentUser);
         }
     }
 }

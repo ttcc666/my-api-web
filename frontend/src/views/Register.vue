@@ -30,9 +30,7 @@
           </n-button>
         </n-form-item>
       </n-form>
-      <div class="login-link">
-        已有账号？<router-link to="/login">立即登录</router-link>
-      </div>
+      <div class="login-link">已有账号？<router-link to="/login">立即登录</router-link></div>
     </n-card>
   </div>
 </template>
@@ -44,15 +42,19 @@ import { useAuthStore } from '@/stores/auth'
 import { message } from '@/plugins/naive'
 import type { FormInst, FormRules } from 'naive-ui'
 
+defineOptions({
+  name: 'UserRegister',
+})
+
 const formRef = ref<FormInst | null>(null)
 const model = ref({
   username: '',
   email: '',
   password: '',
-  repassword: ''
+  repassword: '',
 })
 
-const validatePasswordSame = (rule: any, value: string) => {
+const validatePasswordSame = (_rule: unknown, value: string) => {
   return value === model.value.password
 }
 
@@ -60,31 +62,31 @@ const rules: FormRules = {
   username: {
     required: true,
     message: '请输入用户名',
-    trigger: 'blur'
+    trigger: 'blur',
   },
   email: {
     required: true,
     type: 'email',
     message: '请输入正确的邮箱地址',
-    trigger: ['input', 'blur']
+    trigger: ['input', 'blur'],
   },
   password: {
     required: true,
     message: '请输入密码',
-    trigger: 'blur'
+    trigger: 'blur',
   },
   repassword: [
     {
       required: true,
       message: '请再次输入密码',
-      trigger: ['input', 'blur']
+      trigger: ['input', 'blur'],
     },
     {
       validator: validatePasswordSame,
       message: '两次输入的密码不一致',
-      trigger: ['blur', 'password-input']
-    }
-  ]
+      trigger: ['blur', 'password-input'],
+    },
+  ],
 }
 
 const authStore = useAuthStore()

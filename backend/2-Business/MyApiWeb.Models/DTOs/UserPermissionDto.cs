@@ -94,4 +94,30 @@ namespace MyApiWeb.Models.DTOs
         [Required(ErrorMessage = "权限名称列表不能为空")]
         public List<string> Permissions { get; set; } = new();
     }
+
+    /// <summary>
+    /// 当前用户信息摘要
+    /// </summary>
+    public class CurrentUserInfoDto
+    {
+        /// <summary>
+        /// 用户ID
+        /// </summary>
+        public string Id { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 用户名
+        /// </summary>
+        public string Username { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 拥有的权限名称列表
+        /// </summary>
+        public List<string> Permissions { get; set; } = new();
+
+        /// <summary>
+        /// 拥有的角色名称列表
+        /// </summary>
+        public List<string> Roles { get; set; } = new();
+    }
 }

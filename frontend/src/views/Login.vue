@@ -14,9 +14,7 @@
           />
         </n-form-item>
         <n-form-item>
-          <n-button type="primary" @click="handleLogin" block :loading="loading">
-            登录
-          </n-button>
+          <n-button type="primary" @click="handleLogin" block :loading="loading"> 登录 </n-button>
         </n-form-item>
       </n-form>
       <div class="register-link">
@@ -33,22 +31,26 @@ import { useAuthStore } from '@/stores/auth'
 import { message } from '@/plugins/naive'
 import type { FormInst } from 'naive-ui'
 
+defineOptions({
+  name: 'UserLogin',
+})
+
 const formRef = ref<FormInst | null>(null)
 const model = ref({
   username: '',
-  password: ''
+  password: '',
 })
 const rules = {
   username: {
     required: true,
     message: '请输入用户名',
-    trigger: 'blur'
+    trigger: 'blur',
   },
   password: {
     required: true,
     message: '请输入密码',
-    trigger: 'blur'
-  }
+    trigger: 'blur',
+  },
 }
 
 const authStore = useAuthStore()

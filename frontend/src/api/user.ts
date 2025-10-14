@@ -1,70 +1,74 @@
-import apiClient from '@/utils/request'
-import type { User, UserLoginDto, UserRegisterDto, UserUpdateDto, ApiResponse, UserPermissionInfo } from '@/types/api'
+import { UsersApi } from './users'
+import { TokenApi } from './token'
+import { AuthApi } from './auth'
+import type {
+  UserDto,
+  UserLoginDto,
+  UserRegisterDto,
+  UserUpdateDto,
+  UserPermissionInfoDto,
+  TokenDto,
+} from '@/types/api'
 
 /**
- * 用户API服务
+ * 用户API服务 (向后兼容性包装器)
+ * @deprecated 请使用新的模块化 API: UsersApi, AuthApi, TokenApi
  */
 export class UserApi {
   /**
    * 用户登录
    */
-  static async login(loginData: UserLoginDto): Promise<{ accessToken: string; refreshToken: string }> {
-    // 拦截器已经处理了数据解包，所以这里直接返回 Promise 的结果
-    return apiClient.post('/users/login', loginData);
+  static async login(loginData: UserLoginDto): Promise<TokenDto> {
+    return UsersApi.login(loginData)
   }
 
   /**
    * 用户注册
    */
-  static async register(registerData: UserRegisterDto): Promise<User> {
-    // 对于 register，同样直接返回，让拦截器处理
-    return apiClient.post('/users/register', registerData);
+  static async register(registerData: UserRegisterDto): Promise<UserDto> {
+    return UsersApi.register(registerData)
   }
 
   /**
    * 获取当前用户信息
    */
-  static async getProfile(): Promise<User> {
-    // 对于 getProfile，同样直接返回
-    return apiClient.get('/users/profile');
+  static async getProfile(): Promise<UserDto> {
+    return UsersApi.getProfile()
   }
 
   /**
    * 获取当前用户的权限信息
    */
-  static async getUserPermissions(): Promise<UserPermissionInfo> {
-    // 对于 getUserPermissions，同样直接返回
-    return apiClient.get('/auth/me/permissions');
+  static async getUserPermissions(): Promise<UserPermissionInfoDto> {
+    return AuthApi.getCurrentUserPermissions()
   }
 
   /**
    * 获取所有用户列表
    */
-  static async getAllUsers(): Promise<{ users: User[]; total: number }> {
-    // 对于 getAllUsers，同样直接返回
-    return apiClient.get('/users');
+  static async getAllUsers(): Promise<UserDto[]> {
+    return UsersApi.getAllUsers()
   }
 
   /**
    * 根据ID获取用户
    */
-  static async getUserById(id: number): Promise<User> {
-    // 对于 getUserById，同样直接返回
-    return apiClient.get(`/users/${id}`);
+  static async getUserById(id: string): Promise<UserDto> {
+    return UsersApi.getUserById(id)
   }
 
   /**
    * 更新用户信息
    */
-  static async updateUser(id: number, updateData: UserUpdateDto): Promise<void> {
-    await apiClient.put(`/users/${id}`, updateData)
+  static async updateUser(id: string, updateData: UserUpdateDto): Promise<void> {
+    return UsersApi.updateUser(id, updateData)
   }
 
   /**
    * 删除用户
    */
-  static async deleteUser(id: number): Promise<void> {
-    await apiClient.delete(`/users/${id}`)
+  static async deleteUser(id: string): Promise<void> {
+    return UsersApi.deleteUser(id)
   }
 
   /**
@@ -73,7 +77,7 @@ export class UserApi {
   static async logout(refreshToken: string | null): Promise<void> {
     if (refreshToken) {
       try {
-        await apiClient.post('/token/logout', { refreshToken })
+        await TokenApi.logout({ refreshToken })
       } catch (error) {
         console.error('Failed to revoke token on server:', error)
       }

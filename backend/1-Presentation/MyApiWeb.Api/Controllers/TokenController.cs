@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyApiWeb.Api.Helpers;
 using MyApiWeb.Models.DTOs;
@@ -22,6 +23,7 @@ namespace MyApiWeb.Api.Controllers
 
         [HttpPost("refresh")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResponse<TokenDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
         {
             try
@@ -42,6 +44,7 @@ namespace MyApiWeb.Api.Controllers
 
         [HttpPost("logout")]
         // 登出需要有效的 Access Token，以确认操作者身份
+        [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Logout([FromBody] RefreshTokenRequestDto request)
         {
             var result = await _tokenService.RevokeTokenAsync(request.RefreshToken);
@@ -50,7 +53,7 @@ namespace MyApiWeb.Api.Controllers
                 // 即便吊销失败（可能令牌已失效），也应告知前端登出成功
                 _logger.LogWarning("尝试吊销一个无效或已吊销的令牌: {RefreshToken}", request.RefreshToken);
             }
-            return ApiResultHelper.Success("登出成功");
+            return ApiResultHelper.SuccessMessage("登出成功");
         }
     }
 

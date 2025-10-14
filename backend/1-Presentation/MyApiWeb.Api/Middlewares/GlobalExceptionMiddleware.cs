@@ -30,17 +30,18 @@ namespace MyApiWeb.Api.Middlewares
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             context.Response.ContentType = "application/json";
-            ApiResponse response;
+            context.Response.StatusCode = StatusCodes.Status200OK;
+            ApiResponse<object?> response;
 
             switch (exception)
             {
                 case DomainException domainEx:
                     // 领域异常(自定义异常)
-                    context.Response.StatusCode = domainEx.StatusCode;
-                    response = new ApiResponse(
+                    response = new ApiResponse<object?>(
                         false,
                         domainEx.StatusCode,
-                        domainEx.Message
+                        domainEx.Message,
+                        null
                     );
 
                     // 根据状态码级别记录日志
@@ -62,18 +63,17 @@ namespace MyApiWeb.Api.Middlewares
 
                 case BusinessException businessEx:
                     // 向后兼容旧的 BusinessException
-                    context.Response.StatusCode = businessEx.Code;
-                    response = new ApiResponse(false, businessEx.Code, businessEx.Message);
+                    response = new ApiResponse<object?>(false, businessEx.Code, businessEx.Message, null);
                     _logger.LogWarning(businessEx, "业务异常: {Message}", businessEx.Message);
                     break;
 
                 default:
                     // 未知异常
-                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                    response = new ApiResponse(
+                    response = new ApiResponse<object?>(
                         false,
                         StatusCodes.Status500InternalServerError,
-                        "服务器内部错误,请联系管理员。"
+                        "服务器内部错误,请联系管理员。",
+                        null
                     );
                     _logger.LogError(exception, "未处理的异常: {ExceptionType} - {Message}",
                         exception.GetType().Name,

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyApiWeb.Models.DTOs;
 using MyApiWeb.Services.Interfaces;
@@ -29,13 +30,14 @@ namespace MyApiWeb.Api.Controllers
         /// <returns>用户信息</returns>
         [HttpPost("register")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Register([FromBody] UserRegisterDto registerDto)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    return ValidationError(ModelState);
                 }
 
                 var user = await _service.RegisterAsync(registerDto);
@@ -43,7 +45,7 @@ namespace MyApiWeb.Api.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return Error(ex.Message, 400);
+                return Error(ex.Message, StatusCodes.Status400BadRequest);
             }
             catch (Exception ex)
             {
@@ -59,13 +61,14 @@ namespace MyApiWeb.Api.Controllers
         /// <returns>JWT Token</returns>
         [HttpPost("login")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResponse<TokenDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Login([FromBody] UserLoginDto loginDto)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    return ValidationError(ModelState);
                 }
 
                 var user = await _service.ValidateUserAsync(loginDto.Username, loginDto.Password);
@@ -75,7 +78,7 @@ namespace MyApiWeb.Api.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Error(ex.Message, 401);
+                return Error(ex.Message, StatusCodes.Status401Unauthorized);
             }
             catch (Exception ex)
             {
@@ -89,6 +92,7 @@ namespace MyApiWeb.Api.Controllers
         /// </summary>
         /// <returns>用户信息</returns>
         [HttpGet("profile")]
+        [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProfile()
         {
             try
@@ -96,13 +100,13 @@ namespace MyApiWeb.Api.Controllers
                 var username = User.Identity?.Name;
                 if (string.IsNullOrEmpty(username))
                 {
-                    return Error("未找到用户信息", 401);
+                    return Error("未找到用户信息", StatusCodes.Status401Unauthorized);
                 }
 
                 var user = await _service.GetUserByUsernameAsync(username);
                 if (user == null)
                 {
-                    return Error("用户不存在", 404);
+                    return Error("用户不存在", StatusCodes.Status404NotFound);
                 }
 
                 return Success(user);
@@ -119,6 +123,7 @@ namespace MyApiWeb.Api.Controllers
         /// </summary>
         /// <returns>用户列表</returns>
         [HttpGet]
+        [ProducesResponseType(typeof(ApiResponse<List<UserDto>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllUsers()
         {
             try
@@ -139,6 +144,7 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="id">用户ID</param>
         /// <returns>用户信息</returns>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserById(string id)
         {
             try
@@ -146,7 +152,7 @@ namespace MyApiWeb.Api.Controllers
                 var user = await _service.GetUserByIdAsync(id);
                 if (user == null)
                 {
-                    return Error("用户不存在", 404);
+                    return Error("用户不存在", StatusCodes.Status404NotFound);
                 }
 
                 return Success(user);
@@ -165,22 +171,23 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="updateDto">更新信息</param>
         /// <returns>操作结果</returns>
         [HttpPut("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UserUpdateDto updateDto)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    return ValidationError(ModelState);
                 }
 
                 var result = await _service.UpdateUserAsync(id, updateDto);
                 if (!result)
                 {
-                    return Error("用户不存在", 404);
+                    return Error("用户不存在", StatusCodes.Status404NotFound);
                 }
 
-                return Success("更新成功");
+                return SuccessMessage("更新成功");
             }
             catch (Exception ex)
             {
@@ -195,6 +202,7 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="id">用户ID</param>
         /// <returns>操作结果</returns>
         [HttpDelete("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteUser(string id)
         {
             try
@@ -202,10 +210,10 @@ namespace MyApiWeb.Api.Controllers
                 var result = await _service.DeleteUserAsync(id);
                 if (!result)
                 {
-                    return Error("用户不存在", 404);
+                    return Error("用户不存在", StatusCodes.Status404NotFound);
                 }
 
-                return Success("删除成功");
+                return SuccessMessage("删除成功");
             }
             catch (Exception ex)
             {
@@ -220,6 +228,7 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="id">用户ID</param>
         /// <returns>角色列表</returns>
         [HttpGet("{id}/roles")]
+        [ProducesResponseType(typeof(ApiResponse<List<RoleDto>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserRoles(string id)
         {
             try
@@ -241,22 +250,23 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="assignRolesDto">角色分配请求</param>
         /// <returns>分配结果</returns>
         [HttpPut("{id}/roles")]
+        [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status200OK)]
         public async Task<IActionResult> AssignRolesToUser(string id, [FromBody] AssignUserRolesDto assignRolesDto)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    return ValidationError(ModelState);
                 }
 
                 var result = await _roleService.AssignRolesToUserAsync(id, assignRolesDto);
                 if (result)
                 {
-                    return Success("角色分配成功");
+                    return SuccessMessage("角色分配成功");
                 }
 
-                return Error("角色分配失败", 400);
+                return Error("角色分配失败", StatusCodes.Status400BadRequest);
             }
             catch (Exception ex)
             {
@@ -272,6 +282,7 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="roleId">角色ID</param>
         /// <returns>移除结果</returns>
         [HttpDelete("{id}/roles/{roleId}")]
+        [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RemoveRoleFromUser(string id, string roleId)
         {
             try
@@ -279,10 +290,10 @@ namespace MyApiWeb.Api.Controllers
                 var result = await _roleService.RemoveRoleFromUserAsync(id, roleId);
                 if (result)
                 {
-                    return Success("角色移除成功");
+                    return SuccessMessage("角色移除成功");
                 }
 
-                return Error("角色移除失败", 400);
+                return Error("角色移除失败", StatusCodes.Status400BadRequest);
             }
             catch (Exception ex)
             {

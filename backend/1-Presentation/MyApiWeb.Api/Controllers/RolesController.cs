@@ -1,5 +1,5 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using MyApiWeb.Api.Helpers;
 using MyApiWeb.Models.DTOs;
 using MyApiWeb.Models.Entities;
 using MyApiWeb.Services.Interfaces;
@@ -21,10 +21,11 @@ namespace MyApiWeb.Api.Controllers
         /// </summary>
         /// <returns>角色列表</returns>
         [HttpGet]
+        [ProducesResponseType(typeof(ApiResponse<List<RoleDto>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllRoles()
         {
             var roles = await _service.GetAllRolesAsync();
-            return Ok(ApiResultHelper.Success(roles));
+            return Success(roles);
         }
 
         /// <summary>
@@ -33,15 +34,16 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="id">角色ID</param>
         /// <returns>角色信息</returns>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<RoleDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRoleById(string id)
         {
             var role = await _service.GetRoleByIdAsync(id);
             if (role == null)
             {
-                return NotFound(ApiResultHelper.Error("角色不存在"));
+                return Error("角色不存在", StatusCodes.Status404NotFound);
             }
 
-            return Ok(ApiResultHelper.Success(role));
+            return Success(role);
         }
 
         /// <summary>
@@ -50,15 +52,16 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="createRoleDto">创建角色请求</param>
         /// <returns>创建的角色信息</returns>
         [HttpPost]
+        [ProducesResponseType(typeof(ApiResponse<RoleDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateRole([FromBody] CreateRoleDto createRoleDto)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ApiResultHelper.Error("请求参数无效", 400));
+                return Error("请求参数无效", StatusCodes.Status400BadRequest);
             }
 
             var role = await _service.CreateRoleAsync(createRoleDto);
-            return CreatedAtAction(nameof(GetRoleById), new { id = role.Id }, ApiResultHelper.Success(role));
+            return Success(role, "角色创建成功", StatusCodes.Status201Created);
         }
 
         /// <summary>
@@ -68,15 +71,16 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="updateRoleDto">更新角色请求</param>
         /// <returns>更新的角色信息</returns>
         [HttpPut("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<RoleDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateRole(string id, [FromBody] UpdateRoleDto updateRoleDto)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ApiResultHelper.Error("请求参数无效", 400));
+                return Error("请求参数无效", StatusCodes.Status400BadRequest);
             }
 
             var role = await _service.UpdateRoleAsync(id, updateRoleDto);
-            return Ok(ApiResultHelper.Success(role));
+            return Success(role);
         }
 
         /// <summary>
@@ -85,15 +89,16 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="id">角色ID</param>
         /// <returns>删除结果</returns>
         [HttpDelete("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteRole(string id)
         {
             var result = await _service.DeleteRoleAsync(id);
             if (result)
             {
-                return Ok(ApiResultHelper.Success("角色删除成功"));
+                return SuccessMessage("角色删除成功");
             }
 
-            return BadRequest(ApiResultHelper.Error("角色删除失败"));
+            return Error("角色删除失败", StatusCodes.Status400BadRequest);
         }
 
         /// <summary>
@@ -103,20 +108,21 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="assignPermissionsDto">权限分配请求</param>
         /// <returns>分配结果</returns>
         [HttpPut("{id}/permissions")]
+        [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status200OK)]
         public async Task<IActionResult> AssignPermissionsToRole(string id, [FromBody] AssignRolePermissionsDto assignPermissionsDto)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ApiResultHelper.Error("请求参数无效", 400));
+                return Error("请求参数无效", StatusCodes.Status400BadRequest);
             }
 
             var result = await _service.AssignPermissionsToRoleAsync(id, assignPermissionsDto);
             if (result)
             {
-                return Ok(ApiResultHelper.Success("权限分配成功"));
+                return SuccessMessage("权限分配成功");
             }
 
-            return BadRequest(ApiResultHelper.Error("权限分配失败"));
+            return Error("权限分配失败", StatusCodes.Status400BadRequest);
         }
 
         /// <summary>
@@ -125,10 +131,11 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="id">角色ID</param>
         /// <returns>权限列表</returns>
         [HttpGet("{id}/permissions")]
+        [ProducesResponseType(typeof(ApiResponse<List<PermissionDto>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRolePermissions(string id)
         {
             var permissions = await _service.GetRolePermissionsAsync(id);
-            return Ok(ApiResultHelper.Success(permissions));
+            return Success(permissions);
         }
 
         /// <summary>
@@ -138,10 +145,11 @@ namespace MyApiWeb.Api.Controllers
         /// <param name="excludeId">排除的角色ID</param>
         /// <returns>检查结果</returns>
         [HttpGet("check-name")]
+        [ProducesResponseType(typeof(ApiResponse<ExistsResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CheckRoleName([FromQuery] string name, [FromQuery] string? excludeId = null)
         {
             var exists = await _service.RoleNameExistsAsync(name, excludeId);
-            return Ok(ApiResultHelper.Success(new { exists }));
+            return Success(new ExistsResponseDto { Exists = exists });
         }
     }
 }

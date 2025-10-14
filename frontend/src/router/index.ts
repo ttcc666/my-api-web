@@ -30,7 +30,8 @@ const router = createRouter({
           component: Home,
           meta: {
             // 示例：需要 "dashboard:view" 权限才能访问首页
-            permission: 'dashboard:view'
+            permission: 'dashboard:view',
+            title: '主页'
           }
         },
         // 在此添加其他需要身份验证的路由
@@ -39,7 +40,13 @@ const router = createRouter({
           name: 'role-management',
           component: () => import('@/views/admin/RoleManagement.vue'),
           meta: {
-            permission: 'role:view'
+            permission: 'role:view',
+            title: '角色管理',
+            breadcrumb: [
+              {
+                title: '系统管理'
+              }
+            ]
           }
         },
         {
@@ -47,7 +54,13 @@ const router = createRouter({
           name: 'user-management',
           component: () => import('@/views/admin/UserManagement.vue'),
           meta: {
-            permission: 'user:view'
+            permission: 'user:view',
+            title: '用户管理',
+            breadcrumb: [
+              {
+                title: '系统管理'
+              }
+            ]
           }
         }
       ]

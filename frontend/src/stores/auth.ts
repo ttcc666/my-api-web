@@ -1,6 +1,10 @@
 import { ref, computed, readonly } from 'vue'
 import { defineStore } from 'pinia'
-import type { User, UserLoginDto, UserRegisterDto, UserPermissionInfo } from '@/types/api'
+import type { UserDto, UserLoginDto, UserRegisterDto, UserPermissionInfoDto } from '@/types/api'
+
+// 类型别名以保持兼容性
+type User = UserDto
+type UserPermissionInfo = UserPermissionInfoDto
 import UserApi from '@/api/user'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -8,9 +12,10 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(localStorage.getItem('accessToken'))
   const refreshToken = ref<string | null>(localStorage.getItem('refreshToken'))
+  const tokenExpiresAt = ref<number | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
-  
+
   // 权限相关状态
   const userPermissions = ref<UserPermissionInfo | null>(null)
   const permissions = ref<string[]>([])
@@ -20,22 +25,22 @@ export const useAuthStore = defineStore('auth', () => {
   // 计算属性
   const isAuthenticated = computed(() => !!token.value)
   const username = computed(() => user.value?.username || '')
-  
+
   // 权限检查计算属性
   const hasPermission = computed(() => (permission: string) => {
     return permissions.value.includes(permission)
   })
-  
+
   const hasRole = computed(() => (role: string) => {
     return roles.value.includes(role)
   })
-  
+
   const hasAnyPermission = computed(() => (permissionList: string[]) => {
-    return permissionList.some(permission => permissions.value.includes(permission))
+    return permissionList.some((permission) => permissions.value.includes(permission))
   })
-  
+
   const hasAllPermissions = computed(() => (permissionList: string[]) => {
-    return permissionList.every(permission => permissions.value.includes(permission))
+    return permissionList.every((permission) => permissions.value.includes(permission))
   })
 
   // 清除错误
@@ -53,6 +58,8 @@ export const useAuthStore = defineStore('auth', () => {
   const setTokens = (accessToken: string, newRefreshToken: string) => {
     token.value = accessToken
     refreshToken.value = newRefreshToken
+    tokenExpiresAt.value = parseTokenExpiry(accessToken)
+
     localStorage.setItem('accessToken', accessToken)
     localStorage.setItem('refreshToken', newRefreshToken)
   }
@@ -105,10 +112,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 权限相关方法
   const setUserPermissions = (permissionInfo: UserPermissionInfo) => {
-    if (!permissionInfo) return;
-    userPermissions.value = permissionInfo;
-    permissions.value = (permissionInfo.effectivePermissions || []).map(p => p.name);
-    roles.value = (permissionInfo.roles || []).map(r => r.name);
+    if (!permissionInfo) return
+    userPermissions.value = permissionInfo
+    permissions.value = (permissionInfo.effectivePermissions || []).map((p) => p.name)
+    roles.value = (permissionInfo.roles || []).map((r) => r.name)
   }
 
   const clearUserPermissions = () => {
@@ -139,16 +146,27 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const shouldRefreshToken = (bufferMs = 30_000) => {
+    if (!token.value || !tokenExpiresAt.value) return false
+    return tokenExpiresAt.value - bufferMs <= Date.now()
+  }
+
+  const isAccessTokenExpired = () => {
+    if (!token.value || !tokenExpiresAt.value) return true
+    return tokenExpiresAt.value <= Date.now()
+  }
+
   // 登出
   const logout = () => {
     user.value = null
     token.value = null
     refreshToken.value = null
+    tokenExpiresAt.value = null
     clearUserPermissions()
 
     // 清除所有本地存储，确保完全登出
     localStorage.clear()
-    
+
     // 可以在这里调用后端的 logout 接口，使其 RefreshToken 失效
     // UserApi.logout({ refreshToken: refreshToken.value })
   }
@@ -183,7 +201,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (storedToken && storedRefreshToken) {
       token.value = storedToken
       refreshToken.value = storedRefreshToken
-      
+      tokenExpiresAt.value = parseTokenExpiry(storedToken)
+
       if (storedUser) {
         try {
           user.value = JSON.parse(storedUser)
@@ -205,6 +224,7 @@ export const useAuthStore = defineStore('auth', () => {
     user: readonly(user),
     token: readonly(token),
     refreshToken: readonly(refreshToken),
+    tokenExpiresAt: readonly(tokenExpiresAt),
     loading: readonly(loading),
     error: readonly(error),
     userPermissions: readonly(userPermissions),
@@ -218,6 +238,8 @@ export const useAuthStore = defineStore('auth', () => {
     hasRole,
     hasAnyPermission,
     hasAllPermissions,
+    shouldRefreshToken,
+    isAccessTokenExpired,
     // 方法
     clearError,
     setUser,
@@ -229,6 +251,28 @@ export const useAuthStore = defineStore('auth', () => {
     initializeAuth,
     setUserPermissions,
     clearUserPermissions,
-    loadUserPermissions
+    loadUserPermissions,
   }
 })
+
+function parseTokenExpiry(accessToken: string): number | null {
+  try {
+    const payloadSegment = accessToken.split('.')[1]
+    if (!payloadSegment) return null
+    const payload = JSON.parse(atob(padBase64(payloadSegment))) as { exp?: number }
+    if (typeof payload.exp !== 'number') return null
+    return payload.exp * 1000
+  } catch (error) {
+    console.warn('解析 AccessToken 失败，无法获取过期时间', error)
+    return null
+  }
+}
+
+function padBase64(value: string): string {
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/')
+  const padLength = base64.length % 4
+  if (padLength === 0) {
+    return base64
+  }
+  return base64 + '='.repeat(4 - padLength)
+}

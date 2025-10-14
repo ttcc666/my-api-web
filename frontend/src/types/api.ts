@@ -1,14 +1,42 @@
-// API响应类型定义
-export interface ApiResponse<T = any> {
-  data?: T
+// ===================================
+// General API Response
+// ===================================
+
+/**
+ * API响应的通用结构
+ */
+export interface ApiResponse<T = unknown> {
+  success: boolean
+  code: number
   message: string
-  token?: string
-  total?: number
+  data: T | null
+  total?: number // 用于分页
 }
 
-// 用户相关类型
-export interface User {
-  id: number
+/**
+ * API错误详情
+ */
+export interface ApiError {
+  message: string
+  status?: number
+}
+
+/**
+ * 检查资源是否存在响应的DTO
+ */
+export interface ExistsResponseDto {
+  exists: boolean
+}
+
+// ===================================
+// User Related Types
+// ===================================
+
+/**
+ * 用户信息
+ */
+export interface UserDto {
+  id: string
   username: string
   email: string
   realName?: string
@@ -18,6 +46,9 @@ export interface User {
   lastLoginTime?: string
 }
 
+/**
+ * 用户注册DTO
+ */
 export interface UserRegisterDto {
   username: string
   email: string
@@ -26,24 +57,66 @@ export interface UserRegisterDto {
   phone?: string
 }
 
+/**
+ * 用户登录DTO
+ */
 export interface UserLoginDto {
   username: string
   password: string
 }
 
+/**
+ * 用户更新DTO
+ */
 export interface UserUpdateDto {
   realName?: string
   phone?: string
 }
 
-// API错误类型
-export interface ApiError {
-  message: string
-  status?: number
+/**
+ * 分配用户角色DTO
+ */
+export interface AssignUserRolesDto {
+  roleIds: string[]
 }
 
-// 权限和角色相关类型
-export interface Permission {
+// ===================================
+// Token Related Types
+// ===================================
+
+/**
+ * Token响应DTO
+ */
+export interface TokenDto {
+  accessToken: string
+  refreshToken: string
+}
+
+/**
+ * 刷新Token请求DTO
+ */
+export interface RefreshTokenRequestDto {
+  refreshToken: string
+}
+
+/**
+ * 当前用户信息DTO
+ */
+export interface CurrentUserInfoDto {
+  id: string
+  username: string
+  permissions: string[]
+  roles: string[]
+}
+
+// ===================================
+// Permission Related Types
+// ===================================
+
+/**
+ * 权限信息
+ */
+export interface PermissionDto {
   id: string
   name: string
   displayName: string
@@ -53,20 +126,139 @@ export interface Permission {
   creationTime: string
 }
 
-export interface Role {
+/**
+ * 创建权限DTO
+ */
+export interface CreatePermissionDto {
+  name: string
+  displayName: string
+  description?: string
+  group?: string
+  isEnabled: boolean
+}
+
+/**
+ * 更新权限DTO
+ */
+export interface UpdatePermissionDto {
+  name: string
+  displayName: string
+  description?: string
+  group?: string
+  isEnabled: boolean
+}
+
+/**
+ * 权限分组DTO
+ */
+export interface PermissionGroupDto {
+  group: string
+  permissions: PermissionDto[]
+}
+
+/**
+ * 检查权限DTO
+ */
+export interface CheckPermissionDto {
+  permissions: string[]
+}
+
+/**
+ * 用户权限检查DTO
+ */
+export interface UserPermissionCheckDto {
+  userId: string
+  permission: string
+  hasPermission: boolean
+  source: string
+}
+
+/**
+ * 用户权限信息DTO
+ */
+export interface UserPermissionInfoDto {
+  userId: string
+  username: string
+  roles: RoleDto[]
+  directPermissions: PermissionDto[]
+  effectivePermissions: PermissionDto[]
+}
+
+/**
+ * 分配用户权限DTO
+ */
+export interface AssignUserPermissionsDto {
+  permissionIds: string[]
+}
+
+// ===================================
+// Role Related Types
+// ===================================
+
+/**
+ * 角色信息
+ */
+export interface RoleDto {
   id: string
   name: string
   description?: string
   isSystem: boolean
   isEnabled: boolean
   creationTime: string
-  permissions: Permission[]
+  permissions?: PermissionDto[]
 }
 
-export interface UserPermissionInfo {
-  userId: string
-  username: string
-  roles: Role[]
-  directPermissions: Permission[]
-  effectivePermissions: Permission[]
+/**
+ * 创建角色DTO
+ */
+export interface CreateRoleDto {
+  name: string
+  description?: string
+  isEnabled: boolean
+  permissionIds?: string[]
 }
+
+/**
+ * 更新角色DTO
+ */
+export interface UpdateRoleDto {
+  name: string
+  description?: string
+  isEnabled: boolean
+}
+
+/**
+ * 分配角色权限DTO
+ */
+export interface AssignRolePermissionsDto {
+  permissionIds: string[]
+}
+
+// ===================================
+// Legacy Type Aliases (for backward compatibility)
+// ===================================
+
+/**
+ * @deprecated 使用 UserDto 替代
+ */
+export type User = UserDto
+
+/**
+ * @deprecated 使用 PermissionDto 替代
+ */
+export type Permission = PermissionDto
+
+/**
+ * @deprecated 使用 RoleDto 替代
+ */
+export type Role = RoleDto
+
+/**
+ * @deprecated 使用 TokenDto 替代
+ */
+export type TokenPayload = TokenDto
+
+/**
+ * @deprecated 使用 UserPermissionInfoDto 替代
+ */
+export type UserPermissionInfo = UserPermissionInfoDto

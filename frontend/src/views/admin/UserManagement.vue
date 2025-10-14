@@ -1,12 +1,7 @@
 <template>
   <div class="user-management">
     <h1>用户管理</h1>
-    <n-data-table
-      :columns="columns"
-      :data="users"
-      :loading="loading"
-      :pagination="pagination"
-    />
+    <n-data-table :columns="columns" :data="users" :loading="loading" :pagination="pagination" />
 
     <!-- 编辑用户角色和权限的模态框 -->
     <n-modal v-model:show="showModal" preset="card" style="width: 800px" title="编辑用户">
@@ -53,11 +48,16 @@ import {
   NSelect,
   NTransfer,
   useMessage,
-  type DataTableColumns
+  type DataTableColumns,
 } from 'naive-ui'
 import UserApi from '@/api/user'
 import RoleApi from '@/api/role'
-import type { User, Role, Permission } from '@/types/api'
+import type { UserDto, RoleDto, PermissionDto } from '@/types/api'
+
+// 类型别名以保持兼容性
+type User = UserDto
+type Role = RoleDto
+type Permission = PermissionDto
 
 interface UserWithRolesAndPermissions extends User {
   roleIds: string[]
@@ -74,7 +74,7 @@ const permissions = ref<Permission[]>([])
 const showModal = ref(false)
 
 const defaultUser = (): UserWithRolesAndPermissions => ({
-  id: 0,
+  id: '',
   username: '',
   email: '',
   isActive: false,
@@ -82,29 +82,29 @@ const defaultUser = (): UserWithRolesAndPermissions => ({
   roleIds: [],
   directPermissionIds: [],
   roles: [],
-  directPermissions: []
+  directPermissions: [],
 })
 
 const currentUser = ref<UserWithRolesAndPermissions>(defaultUser())
 
 const roleOptions = computed(() =>
-  roles.value.map(r => ({
+  roles.value.map((r) => ({
     label: r.name,
-    value: r.id
-  }))
+    value: r.id,
+  })),
 )
 
 const permissionOptions = computed(() =>
-  permissions.value.map(p => ({
+  permissions.value.map((p) => ({
     label: `${p.group ? `[${p.group}] ` : ''}${p.displayName}`,
-    value: p.id
-  }))
+    value: p.id,
+  })),
 )
 
 const columns: DataTableColumns<User> = [
   { title: '用户名', key: 'username' },
   { title: '邮箱', key: 'email' },
-  { title: '状态', key: 'isActive', render: row => (row.isActive ? '激活' : '禁用') },
+  { title: '状态', key: 'isActive', render: (row) => (row.isActive ? '激活' : '禁用') },
   {
     title: '操作',
     key: 'actions',
@@ -115,33 +115,34 @@ const columns: DataTableColumns<User> = [
           size: 'small',
           type: 'primary',
           onClick: () => handleEdit(row as UserWithRolesAndPermissions),
-          'v-permission': "'manage:user_permissions'"
+          'v-permission': "'manage:user_permissions'",
         },
-        { default: () => '编辑权限' }
+        { default: () => '编辑权限' },
       )
-    }
-  }
+    },
+  },
 ]
 
 const pagination = {
-  pageSize: 10
+  pageSize: 10,
 }
 
 async function fetchUsers() {
   try {
     loading.value = true
-    const data = await UserApi.getAllUsers();
-    console.log('Fetched users:', data); // 添加日志
-    // 确保我们处理的是一个数组
-    const userList = Array.isArray(data) ? data : (data as any).users || [];
+    const data = await UserApi.getAllUsers()
+    console.log('Fetched users:', data) // 添加日志
+    // API 现在直接返回用户数组
+    const userList = Array.isArray(data) ? data : []
     users.value = userList.map((u: User) => ({
       ...u,
       roleIds: [],
       directPermissionIds: [],
       roles: [],
-      directPermissions: []
-    }));
+      directPermissions: [],
+    }))
   } catch (error) {
+    console.error('获取用户列表失败:', error)
     message.error('获取用户列表失败')
   } finally {
     loading.value = false
@@ -152,9 +153,10 @@ async function fetchRolesAndPermissions() {
   try {
     ;[roles.value, permissions.value] = await Promise.all([
       RoleApi.getAllRoles(),
-      RoleApi.getAllPermissions()
+      RoleApi.getAllPermissions(),
     ])
   } catch (error) {
+    console.error('获取角色和权限列表失败:', error)
     message.error('获取角色和权限列表失败')
   }
 }
@@ -164,8 +166,8 @@ function handleEdit(user: UserWithRolesAndPermissions) {
   // 这里暂时使用模拟数据
   currentUser.value = {
     ...user,
-    roleIds: user.roles.map(r => r.id),
-    directPermissionIds: user.directPermissions.map(p => p.id)
+    roleIds: user.roles.map((r) => r.id),
+    directPermissionIds: user.directPermissions.map((p) => p.id),
   }
   showModal.value = true
 }
@@ -179,6 +181,7 @@ async function handleSubmit() {
     showModal.value = false
     await fetchUsers() // 重新加载用户数据
   } catch (error) {
+    console.error('更新失败:', error)
     message.error('更新失败')
   }
 }
