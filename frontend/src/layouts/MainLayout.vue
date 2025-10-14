@@ -3,7 +3,7 @@
     <n-layout-header bordered class="header">
       <div class="logo">My App</div>
       <div class="user-info">
-        <span>欢迎，{{ authStore.username }}</span>
+        <span>欢迎，{{ userStore.username }}</span>
         <n-button text @click="handleLogout">退出登录</n-button>
       </div>
     </n-layout-header>
@@ -32,9 +32,11 @@
           <app-menu-tabs />
         </div>
         <div class="content-view">
-          <keep-alive>
-            <router-view />
-          </keep-alive>
+          <router-view v-slot="{ Component }">
+            <keep-alive :include="cachedViews" :max="10">
+              <component :is="Component" />
+            </keep-alive>
+          </router-view>
         </div>
       </n-layout-content>
     </n-layout>
@@ -46,6 +48,8 @@ import { h, ref, computed, watch, type Component } from 'vue'
 import { NIcon } from 'naive-ui'
 import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/user'
+import { usePermissionStore } from '@/stores/permission'
 import { useTabStore } from '@/stores/tabs'
 import {
   HomeOutline as HomeIcon,
@@ -58,9 +62,16 @@ import AppMenuTabs from '@/components/navigation/AppMenuTabs.vue'
 
 const collapsed = ref(false)
 const authStore = useAuthStore()
+const userStore = useUserStore()
+const permissionStore = usePermissionStore()
 const router = useRouter()
 const route = useRoute()
 const tabStore = useTabStore()
+
+// Keep-alive 缓存的视图列表（基于打开的标签页）
+const cachedViews = computed(() => {
+  return tabStore.tabs.map((tab) => tab.key)
+})
 
 // 计算当前菜单项的 key，用于高亮显示
 const currentMenuKey = computed(() => {
@@ -81,19 +92,19 @@ const menuOptions = [
     label: '系统管理',
     key: 'system-management',
     icon: renderIcon(SettingsIcon),
-    show: authStore.hasPermission('user:view') || authStore.hasPermission('role:view'),
+    show: permissionStore.hasPermission('user:view') || permissionStore.hasPermission('role:view'),
     children: [
       {
         label: () => h(RouterLink, { to: '/admin/users' }, { default: () => '用户管理' }),
         key: 'user-management',
         icon: renderIcon(UserIcon),
-        show: authStore.hasPermission('user:view'),
+        show: permissionStore.hasPermission('user:view'),
       },
       {
         label: () => h(RouterLink, { to: '/admin/roles' }, { default: () => '角色管理' }),
         key: 'role-management',
         icon: renderIcon(ShieldIcon),
-        show: authStore.hasPermission('role:view'),
+        show: permissionStore.hasPermission('role:view'),
       },
     ],
   },

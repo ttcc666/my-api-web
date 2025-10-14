@@ -25,6 +25,13 @@ export interface ErrorInfo {
   redirect?: string
 }
 
+// 错误处理选项
+export interface ErrorHandlerOptions {
+  silent?: boolean // 静默处理，不显示任何提示
+  skipRedirect?: boolean // 跳过自动跳转
+  customMessage?: string // 自定义错误消息
+}
+
 // HTTP 状态码错误映射
 const HTTP_ERROR_MAP: Record<number, ErrorInfo> = {
   400: {
@@ -247,9 +254,22 @@ export function getErrorInfo(error: unknown): ErrorInfo {
 
 /**
  * 处理错误并显示相应的提示
+ * @param error 错误对象
+ * @param options 错误处理选项
  */
-export function handleError(error: unknown): void {
+export function handleError(error: unknown, options?: ErrorHandlerOptions): void {
   const errorInfo = getErrorInfo(error)
+
+  // 静默模式：只记录日志，不显示提示和跳转
+  if (options?.silent) {
+    console.error('API Error (Silent):', {
+      type: errorInfo.type,
+      status: errorInfo.status,
+      message: errorInfo.message,
+      originalError: error,
+    })
+    return
+  }
 
   console.error('API Error:', {
     type: errorInfo.type,
@@ -258,19 +278,22 @@ export function handleError(error: unknown): void {
     originalError: error,
   })
 
+  // 使用自定义消息（如果提供）
+  const displayMessage = options?.customMessage || errorInfo.message
+
   // 显示错误提示
   if (errorInfo.showMessage) {
-    message.error(errorInfo.message)
+    message.error(displayMessage)
   } else if (errorInfo.showNotification) {
     notification.error({
       title: errorInfo.title || '错误',
-      content: errorInfo.message,
+      content: displayMessage,
       duration: 5000,
     })
   }
 
-  // 处理页面跳转
-  if (errorInfo.redirect) {
+  // 处理页面跳转（除非明确跳过）
+  if (errorInfo.redirect && !options?.skipRedirect) {
     router.push(errorInfo.redirect)
   }
 }

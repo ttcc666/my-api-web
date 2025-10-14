@@ -47,38 +47,31 @@ import {
   NInput,
   NSelect,
   NTransfer,
-  useMessage,
   type DataTableColumns,
 } from 'naive-ui'
-import UserApi from '@/api/user'
-import RoleApi from '@/api/role'
-import { UsersApi } from '@/api/users'
-import { PermissionsApi } from '@/api/permissions'
-import type {
-  UserDto,
-  RoleDto,
-  PermissionDto,
-  AssignUserRolesDto,
-  AssignUserPermissionsDto,
-} from '@/types/api'
+import { usePermissionStore } from '@/stores/permission'
+import {
+  useUserManagement,
+  type UserWithRolesAndPermissions,
+} from '@/composables/useUserManagement'
+import { useRoleManagement } from '@/composables/useRoleManagement'
+import { usePermissions } from '@/composables/usePermissions'
+import type { UserDto } from '@/types/api'
 
-// 类型别名以保持兼容性
 type User = UserDto
-type Role = RoleDto
-type Permission = PermissionDto
 
-interface UserWithRolesAndPermissions extends User {
-  roleIds: string[]
-  directPermissionIds: string[]
-  roles: Role[]
-  directPermissions: Permission[]
-}
+const permissionStore = usePermissionStore()
+const {
+  loading: userLoading,
+  users,
+  fetchUsers,
+  getUserPermissions,
+  updateUserRolesAndPermissions,
+} = useUserManagement()
+const { roles, fetchRoles } = useRoleManagement()
+const { permissions, fetchPermissions } = usePermissions()
 
-const message = useMessage()
-const loading = ref(false)
-const users = ref<UserWithRolesAndPermissions[]>([])
-const roles = ref<Role[]>([])
-const permissions = ref<Permission[]>([])
+const loading = computed(() => userLoading.value)
 const showModal = ref(false)
 
 const defaultUser = (): UserWithRolesAndPermissions => ({
@@ -117,13 +110,17 @@ const columns: DataTableColumns<User> = [
     title: '操作',
     key: 'actions',
     render(row) {
+      // 使用条件渲染替代 v-permission 指令
+      if (!permissionStore.hasPermission('manage:user_permissions')) {
+        return null
+      }
+
       return h(
         NButton,
         {
           size: 'small',
           type: 'primary',
           onClick: () => handleEdit(row as UserWithRolesAndPermissions),
-          'v-permission': "'manage:user_permissions'",
         },
         { default: () => '编辑权限' },
       )
@@ -135,46 +132,9 @@ const pagination = {
   pageSize: 10,
 }
 
-async function fetchUsers() {
-  try {
-    loading.value = true
-    const data = await UserApi.getAllUsers()
-    console.log('Fetched users:', data) // 添加日志
-    // API 现在直接返回用户数组
-    const userList = Array.isArray(data) ? data : []
-    users.value = userList.map((u: User) => ({
-      ...u,
-      roleIds: [],
-      directPermissionIds: [],
-      roles: [],
-      directPermissions: [],
-    }))
-  } catch (error) {
-    console.error('获取用户列表失败:', error)
-    message.error('获取用户列表失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function fetchRolesAndPermissions() {
-  try {
-    ;[roles.value, permissions.value] = await Promise.all([
-      RoleApi.getAllRoles(),
-      RoleApi.getAllPermissions(),
-    ])
-  } catch (error) {
-    console.error('获取角色和权限列表失败:', error)
-    message.error('获取角色和权限列表失败')
-  }
-}
-
 async function handleEdit(user: UserWithRolesAndPermissions) {
-  try {
-    loading.value = true
-    // 从后端获取用户的完整权限信息
-    const userPermissions = await PermissionsApi.getUserPermissions(user.id)
-
+  const userPermissions = await getUserPermissions(user.id)
+  if (userPermissions) {
     currentUser.value = {
       ...user,
       roleIds: userPermissions.roles.map((r) => r.id),
@@ -183,44 +143,24 @@ async function handleEdit(user: UserWithRolesAndPermissions) {
       directPermissions: userPermissions.directPermissions,
     }
     showModal.value = true
-  } catch (error) {
-    console.error('获取用户权限信息失败:', error)
-    message.error('获取用户权限信息失败')
-  } finally {
-    loading.value = false
   }
 }
 
 async function handleSubmit() {
-  try {
-    loading.value = true
-
-    // 更新用户角色
-    const rolesData: AssignUserRolesDto = {
-      roleIds: currentUser.value.roleIds,
-    }
-    await UsersApi.assignUserRoles(currentUser.value.id, rolesData)
-
-    // 更新用户直接权限
-    const permissionsData: AssignUserPermissionsDto = {
-      permissionIds: currentUser.value.directPermissionIds,
-    }
-    await PermissionsApi.assignUserPermissions(currentUser.value.id, permissionsData)
-
-    message.success('更新成功')
+  const success = await updateUserRolesAndPermissions(
+    currentUser.value.id,
+    currentUser.value.roleIds,
+    currentUser.value.directPermissionIds,
+  )
+  if (success) {
     showModal.value = false
-    await fetchUsers() // 重新加载用户数据
-  } catch (error) {
-    console.error('更新失败:', error)
-    message.error('更新失败')
-  } finally {
-    loading.value = false
   }
 }
 
 onMounted(() => {
   fetchUsers()
-  fetchRolesAndPermissions()
+  fetchRoles()
+  fetchPermissions()
 })
 </script>
 

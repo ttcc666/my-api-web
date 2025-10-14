@@ -1,11 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import MainLayout from '@/layouts/MainLayout.vue'
-import Home from '@/views/Home.vue'
-import Login from '@/views/Login.vue'
-import Register from '@/views/Register.vue'
-import NotFoundView from '@/views/NotFoundView.vue'
-import ForbiddenView from '@/views/ForbiddenView.vue'
+import { usePermissionStore } from '@/stores/permission'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,26 +8,25 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: Login
+      component: () => import('@/views/Login.vue'),
     },
     {
       path: '/register',
       name: 'register',
-      component: Register
+      component: () => import('@/views/Register.vue'),
     },
     {
       path: '/',
-      component: MainLayout,
+      component: () => import('@/layouts/MainLayout.vue'),
       children: [
         {
           path: '',
           name: 'home',
-          component: Home,
+          component: () => import('@/views/Home.vue'),
           meta: {
-            // 示例：需要 "dashboard:view" 权限才能访问首页
             permission: 'dashboard:view',
-            title: '主页'
-          }
+            title: '主页',
+          },
         },
         // 在此添加其他需要身份验证的路由
         {
@@ -44,10 +38,10 @@ const router = createRouter({
             title: '角色管理',
             breadcrumb: [
               {
-                title: '系统管理'
-              }
-            ]
-          }
+                title: '系统管理',
+              },
+            ],
+          },
         },
         {
           path: '/admin/users',
@@ -58,30 +52,32 @@ const router = createRouter({
             title: '用户管理',
             breadcrumb: [
               {
-                title: '系统管理'
-              }
-            ]
-          }
-        }
-      ]
+                title: '系统管理',
+              },
+            ],
+          },
+        },
+      ],
     },
     {
       path: '/403',
       name: 'forbidden',
-      component: ForbiddenView
+      component: () => import('@/views/ForbiddenView.vue'),
     },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
-      component: NotFoundView
-    }
-  ]
+      component: () => import('@/views/NotFoundView.vue'),
+    },
+  ],
 })
 
-let isFetchingPermissions = false;
+// 使用 Promise 缓存来管理权限加载，避免并发请求
+let permissionPromise: Promise<void> | null = null
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  const permissionStore = usePermissionStore()
   const isAuthenticated = authStore.isAuthenticated
   const publicPages = ['login', 'register']
   const isPublicPage = publicPages.includes(to.name as string)
@@ -94,35 +90,28 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // 1.2 如果权限未加载，则加载权限
-    if (!authStore.permissionsLoaded) {
-      if (!isFetchingPermissions) {
-        isFetchingPermissions = true;
-        try {
-          await authStore.loadUserPermissions();
-        } catch (error) {
-          console.error('路由守卫中加载权限失败:', error);
-          authStore.logout();
-          isFetchingPermissions = false; // 在失败时也需要重置
-          return next({ name: 'login', query: { redirect: to.fullPath } });
-        } finally {
-          isFetchingPermissions = false;
-        }
-      } else {
-        // 如果正在获取权限，则等待
-        await new Promise(resolve => {
-          const interval = setInterval(() => {
-            if (!isFetchingPermissions) {
-              clearInterval(interval);
-              resolve(null);
-            }
-          }, 50);
-        });
+    if (!permissionStore.permissionsLoaded) {
+      // 如果没有正在进行的权限加载，创建新的 Promise
+      if (!permissionPromise) {
+        permissionPromise = permissionStore.loadUserPermissions().finally(() => {
+          // 加载完成后清除 Promise 缓存
+          permissionPromise = null
+        })
+      }
+
+      try {
+        // 等待权限加载完成（可能是当前创建的，也可能是之前创建的）
+        await permissionPromise
+      } catch (error) {
+        console.error('路由守卫中加载权限失败:', error)
+        authStore.logout()
+        return next({ name: 'login', query: { redirect: to.fullPath } })
       }
     }
 
     // 1.3 检查页面权限
     const requiredPermission = to.meta.permission as string | undefined
-    if (requiredPermission && !authStore.hasPermission(requiredPermission)) {
+    if (requiredPermission && !permissionStore.hasPermission(requiredPermission)) {
       // 如果需要权限但用户没有，则跳转到 403 页面
       return next({ name: 'forbidden' })
     }

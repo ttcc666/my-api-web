@@ -50,14 +50,16 @@ import {
   type FormInst,
   type FormRules,
 } from 'naive-ui'
-import RoleApi, { type RoleCreateDto, type RoleUpdateDto } from '@/api/role'
-import type { RoleDto, PermissionDto } from '@/types/api'
+import { usePermissionStore } from '@/stores/permission'
+import { RolesApi, PermissionsApi } from '@/api'
+import type { RoleDto, PermissionDto, CreateRoleDto, UpdateRoleDto } from '@/types/api'
 
 // 类型别名以保持兼容性
 type Role = RoleDto
 type Permission = PermissionDto
 
 const message = useMessage()
+const permissionStore = usePermissionStore()
 const loading = ref(false)
 const roles = ref<Role[]>([])
 const permissions = ref<Permission[]>([])
@@ -101,30 +103,40 @@ const columns: DataTableColumns<Role> = [
     title: '操作',
     key: 'actions',
     render(row) {
-      return h('div', [
-        h(
-          NButton,
-          {
-            size: 'small',
-            type: 'primary',
-            onClick: () => handleEdit(row),
-            'v-permission': "'edit:role'",
-          },
-          { default: () => '编辑' },
-        ),
-        h(
-          NButton,
-          {
-            size: 'small',
-            type: 'error',
-            style: 'margin-left: 8px',
-            disabled: row.isSystem,
-            onClick: () => handleDelete(row),
-            'v-permission': "'delete:role'",
-          },
-          { default: () => '删除' },
-        ),
-      ])
+      const buttons = []
+
+      // 使用条件渲染替代 v-permission 指令
+      if (permissionStore.hasPermission('edit:role')) {
+        buttons.push(
+          h(
+            NButton,
+            {
+              size: 'small',
+              type: 'primary',
+              onClick: () => handleEdit(row),
+            },
+            { default: () => '编辑' },
+          ),
+        )
+      }
+
+      if (permissionStore.hasPermission('delete:role')) {
+        buttons.push(
+          h(
+            NButton,
+            {
+              size: 'small',
+              type: 'error',
+              style: 'margin-left: 8px',
+              disabled: row.isSystem,
+              onClick: () => handleDelete(row),
+            },
+            { default: () => '删除' },
+          ),
+        )
+      }
+
+      return buttons.length > 0 ? h('div', buttons) : null
     },
   },
 ]
@@ -136,7 +148,7 @@ const pagination = {
 async function fetchRoles() {
   try {
     loading.value = true
-    const roleList = await RoleApi.getAllRoles()
+    const roleList = await RolesApi.getAllRoles()
     console.log('Fetched roles:', roleList) // 添加日志
     if (Array.isArray(roleList)) {
       roles.value = roleList
@@ -154,7 +166,7 @@ async function fetchRoles() {
 
 async function fetchPermissions() {
   try {
-    const permissionList = await RoleApi.getAllPermissions()
+    const permissionList = await PermissionsApi.getAllPermissions()
     permissions.value = Array.isArray(permissionList) ? permissionList : []
   } catch (error) {
     console.error('获取权限列表失败:', error)
@@ -179,7 +191,7 @@ function handleEdit(role: Role) {
 
 async function handleDelete(role: Role) {
   try {
-    await RoleApi.deleteRole(role.id)
+    await RolesApi.deleteRole(role.id)
     message.success('删除成功')
     await fetchRoles()
   } catch (error) {
@@ -193,22 +205,24 @@ async function handleSubmit() {
     if (!errors) {
       try {
         if (isEdit.value) {
-          const updateData: RoleUpdateDto = {
+          const updateData: UpdateRoleDto = {
             name: currentRole.value.name,
             description: currentRole.value.description,
             isEnabled: currentRole.value.isEnabled,
-            permissionIds: currentRole.value.permissionIds,
           }
-          await RoleApi.updateRole(currentRole.value.id, updateData)
+          await RolesApi.updateRole(currentRole.value.id, updateData)
+          await RolesApi.assignRolePermissions(currentRole.value.id, {
+            permissionIds: currentRole.value.permissionIds,
+          })
           message.success('更新成功')
         } else {
-          const createData: RoleCreateDto = {
+          const createData: CreateRoleDto = {
             name: currentRole.value.name,
             description: currentRole.value.description,
             isEnabled: currentRole.value.isEnabled,
             permissionIds: currentRole.value.permissionIds,
           }
-          await RoleApi.createRole(createData)
+          await RolesApi.createRole(createData)
           message.success('创建成功')
         }
         showModal.value = false
