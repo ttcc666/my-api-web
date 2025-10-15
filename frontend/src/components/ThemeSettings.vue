@@ -24,9 +24,9 @@
                 </div>
                 <a-radio-group v-model:value="themeStore.layoutMode" @change="handleLayoutChange" button-style="solid"
                     style="width: 100%">
-                    <a-radio-button value="side" style="width: 33.33%">侧边</a-radio-button>
-                    <a-radio-button value="top" style="width: 33.33%">顶部</a-radio-button>
-                    <a-radio-button value="mix" style="width: 33.33%">混合</a-radio-button>
+                    <a-radio-button value="side" style="width: 33.33%; text-align: center;">侧边</a-radio-button>
+                    <a-radio-button value="top" style="width: 33.33%; text-align: center;">顶部</a-radio-button>
+                    <a-radio-button value="mix" style="width: 33.33%; text-align: center;">混合</a-radio-button>
                 </a-radio-group>
             </div>
 
@@ -39,9 +39,9 @@
                 </div>
                 <a-radio-group v-model:value="themeStore.fontSize" @change="handleFontSizeChange" button-style="solid"
                     style="width: 100%">
-                    <a-radio-button value="small" style="width: 33.33%">小</a-radio-button>
-                    <a-radio-button value="medium" style="width: 33.33%">中</a-radio-button>
-                    <a-radio-button value="large" style="width: 33.33%">大</a-radio-button>
+                    <a-radio-button value="small" style="width: 33.33%; text-align: center;">小</a-radio-button>
+                    <a-radio-button value="medium" style="width: 33.33%; text-align: center;">中</a-radio-button>
+                    <a-radio-button value="large" style="width: 33.33%; text-align: center;">大</a-radio-button>
                 </a-radio-group>
             </div>
         </a-space>
