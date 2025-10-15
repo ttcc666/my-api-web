@@ -86,5 +86,13 @@ namespace MyApiWeb.Services.Interfaces
         /// <param name="password">明文密码</param>
         /// <returns>密码哈希</returns>
         string HashPassword(string password);
+
+        /// <summary>
+        /// 修改用户密码
+        /// </summary>
+        /// <param name="id">用户ID</param>
+        /// <param name="changePasswordDto">密码修改信息</param>
+        /// <returns>是否成功</returns>
+        Task<bool> ChangePasswordAsync(string id, ChangePasswordDto changePasswordDto);
     }
 }

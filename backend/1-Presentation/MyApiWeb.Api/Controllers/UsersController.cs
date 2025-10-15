@@ -260,6 +260,67 @@ namespace MyApiWeb.Api.Controllers
         }
 
         /// <summary>
+        /// 修改用户密码
+        /// </summary>
+        /// <param name="id">用户ID</param>
+        /// <param name="changePasswordDto">密码修改信息</param>
+        /// <returns>操作结果</returns>
+        /// <response code="200">密码修改成功</response>
+        /// <response code="400">请求参数无效或校验失败</response>
+        /// <response code="401">用户未认证</response>
+        /// <response code="403">无权限修改该用户密码</response>
+        /// <response code="404">用户不存在</response>
+        /// <response code="500">服务器内部错误</response>
+        [HttpPut("{id}/password")]
+        [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ChangePassword(string id, [FromBody] ChangePasswordDto changePasswordDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return ValidationError(ModelState);
+                }
+
+                if (CurrentUserId == null)
+                {
+                    return Error("未找到用户信息", StatusCodes.Status401Unauthorized);
+                }
+
+                if (!string.Equals(CurrentUserId, id, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Error("无权限修改该用户密码", StatusCodes.Status403Forbidden);
+                }
+
+                var result = await _service.ChangePasswordAsync(id, changePasswordDto);
+                if (!result)
+                {
+                    return Error("用户不存在", StatusCodes.Status404NotFound);
+                }
+
+                return SuccessMessage("密码修改成功");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Error(ex.Message, StatusCodes.Status400BadRequest);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Error(ex.Message, StatusCodes.Status400BadRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "修改用户密码失败");
+                return Error("服务器内部错误");
+            }
+        }
+
+        /// <summary>
         /// 删除用户
         /// </summary>
         /// <param name="id">用户ID</param>

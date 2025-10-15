@@ -24,7 +24,16 @@ const constantRoutes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
     },
-    children: [],
+    children: [
+      {
+        path: 'profile',
+        name: 'user-profile',
+        component: () => import('@/views/profile/UserProfile.vue'),
+        meta: {
+          title: '个人中心',
+        },
+      },
+    ],
   },
   {
     path: '/403',

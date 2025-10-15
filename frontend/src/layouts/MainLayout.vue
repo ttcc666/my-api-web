@@ -8,8 +8,14 @@
             <n-icon><refresh-outline /></n-icon>
           </template>
         </n-button>
-        <span>欢迎，{{ userStore.username || '用户' }}</span>
-        <n-button text @click="handleLogout">退出登录</n-button>
+        <n-dropdown :options="userMenuOptions" @select="handleUserMenuSelect">
+          <n-button text>
+            <template #icon>
+              <n-icon><person-outline /></n-icon>
+            </template>
+            {{ userStore.username || '用户' }}
+          </n-button>
+        </n-dropdown>
       </div>
     </n-layout-header>
     <n-layout has-sider class="main-container">
@@ -50,8 +56,8 @@
 
 <script setup lang="ts">
 import { h, ref, computed, watch, onMounted, type Component } from 'vue'
-import { NIcon, type MenuOption, useMessage } from 'naive-ui'
-import { RefreshOutline } from '@vicons/ionicons5'
+import { NIcon, type MenuOption, type DropdownOption, useMessage } from 'naive-ui'
+import { RefreshOutline, PersonOutline, LogOutOutline } from '@vicons/ionicons5'
 import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
@@ -82,6 +88,19 @@ const defaultMenuOptions: MenuOption[] = [
     label: () => h(RouterLink, { to: '/' }, { default: () => '主页' }),
     key: 'home',
     icon: homeMenuIcon ? renderIcon(homeMenuIcon) : undefined,
+  },
+]
+
+const userMenuOptions: DropdownOption[] = [
+  {
+    label: '个人中心',
+    key: 'profile',
+    icon: renderIcon(PersonOutline),
+  },
+  {
+    label: '退出登录',
+    key: 'logout',
+    icon: renderIcon(LogOutOutline),
   },
 ]
 
@@ -190,6 +209,14 @@ const handleRefresh = async () => {
   }
 }
 
+const handleUserMenuSelect = (key: string) => {
+  if (key === 'profile') {
+    router.push('/profile')
+  } else if (key === 'logout') {
+    handleLogout()
+  }
+}
+
 const handleLogout = () => {
   authStore.logout()
   tabStore.reset()
@@ -218,17 +245,15 @@ const handleLogout = () => {
   height: calc(100vh - 64px);
 }
 .content {
-  position: relative;
   padding: 0;
   height: 100%;
   background-color: #f0f2f5;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .content-navigation {
-  position: absolute;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -236,13 +261,11 @@ const handleLogout = () => {
   padding: 24px 24px 16px 24px;
   background-color: #f0f2f5;
   border-bottom: 1px solid #e0e0e6;
+  flex-shrink: 0;
 }
 .content-view {
-  height: 100%;
-  padding-top: 120px;
-  padding-left: 24px;
-  padding-right: 24px;
-  padding-bottom: 24px;
+  flex: 1;
+  padding: 24px;
   box-sizing: border-box;
   overflow-y: auto;
   /* 隐藏滚动条但保持滚动功能 */
@@ -256,6 +279,6 @@ const handleLogout = () => {
   background-color: #fff;
   border-radius: 8px;
   padding: 16px;
-  min-height: calc(100vh - 200px);
+  min-height: 100%;
 }
 </style>

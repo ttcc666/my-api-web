@@ -17,4 +17,16 @@ import { NConfigProvider, NMessageProvider, NDialogProvider, NNotificationProvid
   </n-config-provider>
 </template>
 
-<style scoped></style>
+<style>
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #f0f2f5;
+}
+</style>

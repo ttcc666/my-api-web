@@ -34,9 +34,11 @@ namespace MyApiWeb.Models.DTOs
         [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度必须在6-100个字符之间")]
         public string Password { get; set; } = string.Empty;
 
+        [DisplayFormat(ConvertEmptyStringToNull = true)]
         [StringLength(100, ErrorMessage = "真实姓名不能超过100个字符")]
         public string? RealName { get; set; }
 
+        [DisplayFormat(ConvertEmptyStringToNull = true)]
         [Phone(ErrorMessage = "手机号格式不正确")]
         public string? Phone { get; set; }
     }
@@ -58,10 +60,26 @@ namespace MyApiWeb.Models.DTOs
     /// </summary>
     public class UserUpdateDto
     {
+        [DisplayFormat(ConvertEmptyStringToNull = true)]
         [StringLength(100, ErrorMessage = "真实姓名不能超过100个字符")]
         public string? RealName { get; set; }
 
+        [DisplayFormat(ConvertEmptyStringToNull = true)]
         [Phone(ErrorMessage = "手机号格式不正确")]
         public string? Phone { get; set; }
+    }
+
+    /// <summary>
+    /// 修改密码 DTO
+    /// </summary>
+    public class ChangePasswordDto
+    {
+        [Required(ErrorMessage = "当前密码不能为空")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度必须在6-100个字符之间")]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "新密码不能为空")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度必须在6-100个字符之间")]
+        public string NewPassword { get; set; } = string.Empty;
     }
 }

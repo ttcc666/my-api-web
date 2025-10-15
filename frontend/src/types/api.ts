@@ -74,6 +74,14 @@ export interface UserUpdateDto {
 }
 
 /**
+ * 修改密码DTO
+ */
+export interface ChangePasswordDto {
+  currentPassword: string
+  newPassword: string
+}
+
+/**
  * 分配用户角色DTO
  */
 export interface AssignUserRolesDto {

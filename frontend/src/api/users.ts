@@ -7,6 +7,7 @@ import type {
   TokenDto,
   RoleDto,
   AssignUserRolesDto,
+  ChangePasswordDto,
 } from '@/types/api'
 
 /**
@@ -53,6 +54,13 @@ export class UsersApi {
    */
   static async updateUser(id: string, updateData: UserUpdateDto): Promise<void> {
     return apiClient.put(`/users/${id}`, updateData)
+  }
+
+  /**
+   * 修改用户密码
+   */
+  static async changePassword(id: string, changePasswordData: ChangePasswordDto): Promise<void> {
+    return apiClient.put(`/users/${id}/password`, changePasswordData)
   }
 
   /**
