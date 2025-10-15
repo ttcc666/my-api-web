@@ -18,6 +18,7 @@ declare module 'vue' {
     AConfigProvider: typeof import('ant-design-vue/es')['ConfigProvider']
     ADescriptions: typeof import('ant-design-vue/es')['Descriptions']
     ADescriptionsItem: typeof import('ant-design-vue/es')['DescriptionsItem']
+    ADivider: typeof import('ant-design-vue/es')['Divider']
     ADrawer: typeof import('ant-design-vue/es')['Drawer']
     ADropdown: typeof import('ant-design-vue/es')['Dropdown']
     AForm: typeof import('ant-design-vue/es')['Form']
@@ -35,6 +36,8 @@ declare module 'vue' {
     AModal: typeof import('ant-design-vue/es')['Modal']
     AppBreadcrumb: typeof import('./src/components/navigation/AppBreadcrumb.vue')['default']
     AppMenuTabs: typeof import('./src/components/navigation/AppMenuTabs.vue')['default']
+    ARadioButton: typeof import('ant-design-vue/es')['RadioButton']
+    ARadioGroup: typeof import('ant-design-vue/es')['RadioGroup']
     ARow: typeof import('ant-design-vue/es')['Row']
     ASelect: typeof import('ant-design-vue/es')['Select']
     ASpace: typeof import('ant-design-vue/es')['Space']
@@ -52,5 +55,6 @@ declare module 'vue' {
     IconPicker: typeof import('./src/components/IconPicker.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    ThemeSettings: typeof import('./src/components/ThemeSettings.vue')['default']
   }
 }
