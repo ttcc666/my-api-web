@@ -174,18 +174,12 @@ async function handlePasswordChange() {
                 </template>
                 <template v-else>
                   <a-form layout="vertical" :model="formData">
-                    <a-row :gutter="16">
-                      <a-col :xs="24" :md="12">
-                        <a-form-item label="真实姓名">
-                          <a-input v-model:value="formData.realName" placeholder="请输入真实姓名" />
-                        </a-form-item>
-                      </a-col>
-                      <a-col :xs="24" :md="12">
-                        <a-form-item label="手机号">
-                          <a-input v-model:value="formData.phone" placeholder="请输入手机号" />
-                        </a-form-item>
-                      </a-col>
-                    </a-row>
+                    <a-form-item label="真实姓名">
+                      <a-input v-model:value="formData.realName" placeholder="请输入真实姓名" />
+                    </a-form-item>
+                    <a-form-item label="手机号">
+                      <a-input v-model:value="formData.phone" placeholder="请输入手机号" />
+                    </a-form-item>
                   </a-form>
                   <div class="action-group">
                     <a-button type="primary" :loading="loading" @click="handleSave">保存</a-button>
@@ -199,37 +193,16 @@ async function handlePasswordChange() {
                 <div class="password-section">
                   <h3>修改密码</h3>
                   <a-form layout="vertical" :model="passwordForm">
-                    <a-row :gutter="16">
-                      <a-col :xs="24" :md="12">
-                        <a-form-item label="当前密码">
-                          <a-input-password
-                            v-model:value="passwordForm.currentPassword"
-                            placeholder="请输入当前密码"
-                          />
-                        </a-form-item>
-                      </a-col>
-                      <a-col :xs="24" :md="12">
-                        <a-form-item label="新密码">
-                          <a-input-password
-                            v-model:value="passwordForm.newPassword"
-                            placeholder="请输入新密码"
-                          />
-                        </a-form-item>
-                      </a-col>
-                      <a-col :xs="24" :md="12">
-                        <a-form-item label="确认密码">
-                          <a-input-password
-                            v-model:value="passwordForm.confirmPassword"
-                            placeholder="请再次输入新密码"
-                          />
-                        </a-form-item>
-                      </a-col>
-                    </a-row>
-                    <a-button
-                      type="primary"
-                      :loading="passwordLoading"
-                      @click="handlePasswordChange"
-                    >
+                    <a-form-item label="当前密码">
+                      <a-input-password v-model:value="passwordForm.currentPassword" placeholder="请输入当前密码" />
+                    </a-form-item>
+                    <a-form-item label="新密码">
+                      <a-input-password v-model:value="passwordForm.newPassword" placeholder="请输入新密码" />
+                    </a-form-item>
+                    <a-form-item label="确认密码">
+                      <a-input-password v-model:value="passwordForm.confirmPassword" placeholder="请再次输入新密码" />
+                    </a-form-item>
+                    <a-button type="primary" :loading="passwordLoading" @click="handlePasswordChange">
                       修改密码
                     </a-button>
                   </a-form>

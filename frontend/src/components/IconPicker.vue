@@ -5,38 +5,22 @@
         <component v-if="selectedIcon" :is="selectedIcon" class="icon-picker__preview-icon" />
         <span v-else>未选择</span>
       </div>
-      <a-input
-        class="icon-picker__input"
-        :value="modelValue ?? ''"
-        placeholder="请选择图标"
-        readonly
-      />
+      <a-input class="icon-picker__input" :value="modelValue ?? ''" placeholder="请选择图标" readonly />
       <a-button type="primary" @click="showDrawer = true">选择</a-button>
       <a-button v-if="modelValue" type="link" danger @click="handleClear">清除</a-button>
     </div>
 
-    <a-drawer v-model:open="showDrawer" width="720" title="选择图标">
+    <a-drawer v-model:open="showDrawer" width="720" title="选择图标" @close="resetQuery">
       <div class="icon-picker__drawer-header">
-        <a-input-search
-          v-model:value="query"
-          allow-clear
-          autofocus
-          placeholder="搜索图标名称，如 home"
-        />
+        <a-input-search v-model:value="query" allow-clear autofocus placeholder="搜索图标名称，如 home" />
         <span class="icon-picker__count">共 {{ filteredIcons.length }} 个图标</span>
       </div>
 
       <div class="icon-picker__grid">
-        <button
-          v-for="option in filteredIcons"
-          :key="option.name"
-          type="button"
-          class="icon-picker__item"
-          :class="{ 'icon-picker__item--active': option.name === modelValue }"
-          @click="handleSelect(option.name)"
-        >
-          <component :is="option.component" class="icon-picker__item-icon" />
-          <span>{{ option.name }}</span>
+        <button v-for="option in filteredIcons" :key="option.name" type="button" class="icon-picker__item"
+          :class="{ 'icon-picker__item--active': option.name === modelValue }" @click="handleSelect(option.name)">
+          <component :is="option.component" class="icon-picker__item-icon" v-if="option.component" />
+          <span class="icon-picker__item-name">{{ option.name }}</span>
         </button>
       </div>
     </a-drawer>
@@ -64,6 +48,10 @@ const emit = defineEmits<{
 const showDrawer = ref(false)
 const query = ref('')
 
+function resetQuery() {
+  query.value = ''
+}
+
 const iconOptions = getAllIconOptions()
 
 const filteredIcons = computed(() => {
@@ -79,6 +67,7 @@ const selectedIcon = computed<Component | null>(() => getIconComponent(props.mod
 function handleSelect(name: string) {
   emit('update:modelValue', name)
   showDrawer.value = false
+  resetQuery()
 }
 
 function handleClear() {
@@ -141,7 +130,6 @@ function handleClear() {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 12px;
-  max-height: 60vh;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -176,9 +164,10 @@ function handleClear() {
   font-size: 24px;
 }
 
-.icon-picker__item span {
+.icon-picker__item-name {
   font-size: 12px;
   text-align: center;
   word-break: break-all;
+  line-height: 1.4;
 }
 </style>

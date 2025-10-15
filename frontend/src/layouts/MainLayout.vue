@@ -3,37 +3,36 @@
     <a-layout-header class="layout-header">
       <div class="logo">My App</div>
       <div class="user-info">
-        <a-button
-          type="text"
-          shape="circle"
-          :loading="refreshing"
-          @click="handleRefresh"
-        >
-          <ReloadOutlined />
+        <a-button type="text" shape="circle" :loading="refreshing" @click="handleRefresh">
+          <template #icon>
+            <ReloadOutlined />
+          </template>
         </a-button>
-        <a-dropdown :trigger="['click']" :menu="userDropdownMenu">
+        <a-dropdown :trigger="['click']">
           <a-button type="text" class="user-button">
             <UserOutlined />
             <span class="username">{{ userStore.username || '用户' }}</span>
           </a-button>
+          <template #overlay>
+            <a-menu @click="handleUserMenuClick">
+              <a-menu-item key="profile">
+                <UserOutlined />
+                <span>个人中心</span>
+              </a-menu-item>
+              <a-menu-item key="logout">
+                <LogoutOutlined />
+                <span>退出登录</span>
+              </a-menu-item>
+            </a-menu>
+          </template>
         </a-dropdown>
       </div>
     </a-layout-header>
     <a-layout class="layout-body">
-      <a-layout-sider
-        collapsible
-        :width="240"
-        :collapsed="collapsed"
-        @collapse="handleCollapse"
-      >
-        <a-menu
-          mode="inline"
-          :items="menuItems"
-          :selectedKeys="selectedMenuKeys"
-          :openKeys="collapsed ? [] : openMenuKeys"
-          :inline-collapsed="collapsed"
-          @openChange="handleOpenChange"
-        />
+      <a-layout-sider collapsible :width="240" :collapsed="collapsed" @collapse="handleCollapse">
+        <a-menu mode="inline" :items="menuItems" :selectedKeys="selectedMenuKeys"
+          :openKeys="collapsed ? [] : openMenuKeys" :inline-collapsed="collapsed" @openChange="handleOpenChange"
+          @click="handleMenuClick" />
       </a-layout-sider>
       <a-layout-content class="layout-content">
         <div class="content-navigation">
@@ -70,7 +69,9 @@ import AppMenuTabs from '@/components/navigation/AppMenuTabs.vue'
 
 type MenuItem = NonNullable<MenuProps['items']>[number]
 
-const collapsed = ref(false)
+const collapsed = ref(
+  localStorage.getItem('menu-collapsed') ? localStorage.getItem('menu-collapsed') === 'true' : false
+)
 const refreshing = ref(false)
 const openMenuKeys = ref<string[]>([])
 const authStore = useAuthStore()
@@ -93,7 +94,7 @@ const fallbackMenuItems: MenuProps['items'] = [
   {
     key: 'home',
     icon: () => h(HomeOutlined),
-    label: () => h(RouterLink, { to: '/' }, { default: () => '主页' }),
+    label: '主页',
   },
 ]
 
@@ -137,6 +138,12 @@ watch(
 )
 
 onMounted(async () => {
+  // 确保菜单默认展开
+  if (!localStorage.getItem('menu-collapsed')) {
+    collapsed.value = false
+    localStorage.setItem('menu-collapsed', 'false')
+  }
+
   if (!authStore.isAuthenticated) {
     return
   }
@@ -147,23 +154,9 @@ onMounted(async () => {
   }
 })
 
-const userDropdownMenu = computed<DropdownProps['menu']>(() => ({
-  items: [
-    {
-      key: 'profile',
-      label: '个人中心',
-      icon: () => h(UserOutlined),
-    },
-    {
-      key: 'logout',
-      label: '退出登录',
-      icon: () => h(LogoutOutlined),
-    },
-  ],
-  onClick: ({ key }: { key: string | number }) => {
-    handleUserMenuSelect(String(key))
-  },
-}))
+function handleUserMenuClick({ key }: { key: string }) {
+  handleUserMenuSelect(key)
+}
 
 function buildMenuItems(
   menus: MenuDto[],
@@ -220,21 +213,7 @@ function resolveActiveMenuKey(): string {
 }
 
 function createMenuLabel(menu: MenuDto) {
-  const target = resolveMenuTarget(menu)
-  if (target) {
-    return () => h(RouterLink, { to: target }, { default: () => menu.title })
-  }
   return menu.title
-}
-
-function resolveMenuTarget(menu: MenuDto) {
-  if (menu.routeName) {
-    return { name: menu.routeName }
-  }
-  if (menu.routePath) {
-    return menu.routePath
-  }
-  return undefined
 }
 
 function resolveIcon(name?: string | null): Component | null {
@@ -256,10 +235,40 @@ async function handleRefresh() {
 
 function handleCollapse(value: boolean) {
   collapsed.value = value
+  localStorage.setItem('menu-collapsed', String(value))
 }
 
 function handleOpenChange(keys: string[]) {
   openMenuKeys.value = keys
+}
+
+function handleMenuClick({ key }: { key: string }) {
+  if (key === 'home') {
+    router.push('/')
+    return
+  }
+  const menu = findMenuByKey(menuStore.menus, key)
+  if (menu?.routeName) {
+    router.push({ name: menu.routeName })
+  } else if (menu?.routePath) {
+    router.push(menu.routePath)
+  }
+}
+
+function findMenuByKey(menus: MenuDto[], key: string): MenuDto | null {
+  for (const menu of menus) {
+    const menuKey = resolveMenuKey(menu)
+    if (menuKey === key) {
+      return menu
+    }
+    if (menu.children) {
+      const found = findMenuByKey(menu.children, key)
+      if (found) {
+        return found
+      }
+    }
+  }
+  return null
 }
 
 function handleUserMenuSelect(key: string) {
@@ -325,33 +334,41 @@ function handleLogout() {
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
-  min-height: calc(100vh - 64px);
+  height: calc(100vh - 64px);
+  overflow: hidden;
 }
 
 .content-navigation {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 24px 24px 16px;
+  gap: 3px;
+  padding: 6px 24px 4px;
   background: #f5f5f5;
   border-bottom: 1px solid #eaeaea;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 .content-view {
   flex: 1;
   padding: 24px;
   box-sizing: border-box;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
 }
 
-.content-view > div {
+.content-view::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+.content-view> :deep(*) {
   background: #fff;
   border-radius: 8px;
   padding: 16px;
-  min-height: 100%;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 </style>
