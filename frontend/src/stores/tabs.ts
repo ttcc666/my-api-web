@@ -103,6 +103,22 @@ export const useTabStore = defineStore('tabs', () => {
     activeKey.value = 'home'
   }
 
+  const closeOthers = (key: string) => {
+    const toClose = tabs.value.filter(tab => tab.key !== key && tab.key !== 'home')
+    for (const tab of toClose) {
+      remove(tab.key)
+    }
+    activeKey.value = key
+  }
+
+  const closeAll = () => {
+    const toClose = tabs.value.filter(tab => tab.key !== 'home')
+    for (const tab of toClose) {
+      remove(tab.key)
+    }
+    activeKey.value = 'home'
+  }
+
   return {
     tabs,
     activeKey,
@@ -110,5 +126,7 @@ export const useTabStore = defineStore('tabs', () => {
     activate,
     remove,
     reset,
+    closeOthers,
+    closeAll,
   }
 })

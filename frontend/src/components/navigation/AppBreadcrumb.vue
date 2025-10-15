@@ -2,21 +2,30 @@
   <div class="app-breadcrumb">
     <a-breadcrumb>
       <a-breadcrumb-item v-for="item in items" :key="item.key">
-        <RouterLink v-if="item.to" :to="item.to">{{ item.label }}</RouterLink>
-        <span v-else>{{ item.label }}</span>
+        <RouterLink v-if="item.to" :to="item.to" class="breadcrumb-link">
+          <component :is="item.icon" v-if="item.icon" />
+          <span>{{ item.label }}</span>
+        </RouterLink>
+        <span v-else class="breadcrumb-text">
+          <component :is="item.icon" v-if="item.icon" />
+          <span>{{ item.label }}</span>
+        </span>
       </a-breadcrumb-item>
     </a-breadcrumb>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, h } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { HomeOutlined } from '@ant-design/icons-vue'
+import { useThemeStore } from '@/stores/theme'
 
 interface BreadcrumbItem {
   key: string
   label: string
   to?: { name: string }
+  icon?: () => ReturnType<typeof h>
 }
 
 interface BreadcrumbMetaItem {
@@ -25,6 +34,7 @@ interface BreadcrumbMetaItem {
 }
 
 const route = useRoute()
+const themeStore = useThemeStore()
 
 const items = computed<BreadcrumbItem[]>(() => {
   const result: BreadcrumbItem[] = [
@@ -32,6 +42,7 @@ const items = computed<BreadcrumbItem[]>(() => {
       key: 'home',
       label: '主页',
       to: route.name !== 'home' ? { name: 'home' } : undefined,
+      icon: () => h(HomeOutlined),
     },
   ]
 
@@ -67,5 +78,25 @@ const items = computed<BreadcrumbItem[]>(() => {
   display: flex;
   align-items: center;
   min-height: 32px;
+}
+
+.breadcrumb-link,
+.breadcrumb-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.breadcrumb-link {
+  color: #555;
+  transition: color 0.3s;
+}
+
+.breadcrumb-link:hover {
+  color: v-bind('themeStore.primaryColor');
+}
+
+.breadcrumb-text {
+  color: #888;
 }
 </style>
