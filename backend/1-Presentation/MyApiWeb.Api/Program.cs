@@ -30,6 +30,7 @@ try
     builder.Services.AddCustomCors(builder.Configuration, builder.Environment);
     builder.Services.AddJwtAuthentication(builder.Configuration);
     builder.Services.AddSwaggerDocumentation();
+    builder.Services.AddCapMessageBus(builder.Configuration);
 
     var app = builder.Build();
 
