@@ -29,7 +29,7 @@ public static class CapServiceExtensions
             options.ConsumerThreadCount = configuration.GetValue<int>("CAP:ConsumerThreadCount", 1);
             
             // 配置 Dashboard
-            //options.UseDashboard();
+            options.UseDashboard();
 
             // 配置失败回调
             options.FailedThresholdCallback = failed =>

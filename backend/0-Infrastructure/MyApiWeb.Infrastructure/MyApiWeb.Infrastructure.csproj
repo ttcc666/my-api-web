@@ -32,6 +32,7 @@
 
     <!-- CAP 核心和存储 -->
     <PackageReference Include="DotNetCore.CAP" Version="8.3.2" />
+    <PackageReference Include="DotNetCore.CAP.Dashboard" Version="8.3.2" />
     <PackageReference Include="DotNetCore.CAP.SqlServer" Version="8.3.2" />
     <PackageReference Include="DotNetCore.CAP.MySql" Version="8.3.2" />
     <PackageReference Include="DotNetCore.CAP.PostgreSql" Version="8.3.2" />
