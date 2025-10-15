@@ -61,33 +61,15 @@ namespace MyApiWeb.Infrastructure.Data
             {
                 // 用户管理权限
                 new Permission { Id = Guid.NewGuid().ToString(), Name = "user:view", DisplayName = "查看用户", Description = "查看用户列表和详情", Group = "用户管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "user:create", DisplayName = "创建用户", Description = "创建新用户", Group = "用户管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "user:edit", DisplayName = "编辑用户", Description = "编辑用户信息", Group = "用户管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "user:delete", DisplayName = "删除用户", Description = "删除用户", Group = "用户管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "user:assign-role", DisplayName = "分配角色", Description = "为用户分配角色", Group = "用户管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "user:assign-permission", DisplayName = "分配权限", Description = "为用户直接分配权限", Group = "用户管理" },
 
                 // 角色管理权限
                 new Permission { Id = Guid.NewGuid().ToString(), Name = "role:view", DisplayName = "查看角色", Description = "查看角色列表和详情", Group = "角色管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "role:create", DisplayName = "创建角色", Description = "创建新角色", Group = "角色管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "role:edit", DisplayName = "编辑角色", Description = "编辑角色信息", Group = "角色管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "role:delete", DisplayName = "删除角色", Description = "删除角色", Group = "角色管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "role:assign-permission", DisplayName = "分配权限", Description = "为角色分配权限", Group = "角色管理" },
 
                 // 权限管理权限
                 new Permission { Id = Guid.NewGuid().ToString(), Name = "permission:view", DisplayName = "查看权限", Description = "查看权限列表和详情", Group = "权限管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "permission:create", DisplayName = "创建权限", Description = "创建新权限", Group = "权限管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "permission:edit", DisplayName = "编辑权限", Description = "编辑权限信息", Group = "权限管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "permission:delete", DisplayName = "删除权限", Description = "删除权限", Group = "权限管理" },
 
-                // 系统管理权限
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "system:settings", DisplayName = "系统设置", Description = "访问系统设置", Group = "系统管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "system:logs", DisplayName = "系统日志", Description = "查看系统日志", Group = "系统管理" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "system:backup", DisplayName = "数据备份", Description = "执行数据备份", Group = "系统管理" },
-
-                // 仪表板权限
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "dashboard:view", DisplayName = "查看仪表板", Description = "访问系统仪表板", Group = "仪表板" },
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "dashboard:statistics", DisplayName = "查看统计", Description = "查看系统统计信息", Group = "仪表板" }
+                // 菜单管理权限
+                new Permission { Id = Guid.NewGuid().ToString(), Name = "menu:view", DisplayName = "查看菜单", Description = "查看菜单列表和详情", Group = "菜单管理" },
             };
 
             // 批量插入权限

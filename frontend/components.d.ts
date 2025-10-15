@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppBreadcrumb: typeof import('./src/components/navigation/AppBreadcrumb.vue')['default']
     AppMenuTabs: typeof import('./src/components/navigation/AppMenuTabs.vue')['default']
+    IconPicker: typeof import('./src/components/IconPicker.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
     NBreadcrumb: typeof import('naive-ui')['NBreadcrumb']
     NBreadcrumbItem: typeof import('naive-ui')['NBreadcrumbItem']
@@ -28,6 +29,8 @@ declare module 'vue' {
     NLayoutSider: typeof import('naive-ui')['NLayoutSider']
     NMenu: typeof import('naive-ui')['NMenu']
     NP: typeof import('naive-ui')['NP']
+    NResult: typeof import('naive-ui')['NResult']
+    NSelect: typeof import('naive-ui')['NSelect']
     NSpace: typeof import('naive-ui')['NSpace']
     NStatistic: typeof import('naive-ui')['NStatistic']
     NTabPane: typeof import('naive-ui')['NTabPane']

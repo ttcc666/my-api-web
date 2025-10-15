@@ -4,6 +4,7 @@ import type { UserLoginDto, UserRegisterDto } from '@/types/api'
 import { UsersApi } from '@/api'
 import { useUserStore } from './user'
 import { usePermissionStore } from './permission'
+import { useMenuStore } from './menu'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('accessToken'))
@@ -37,11 +38,18 @@ export const useAuthStore = defineStore('auth', () => {
 
       const userStore = useUserStore()
       const permissionStore = usePermissionStore()
+      const menuStore = useMenuStore()
 
       const userData = await UsersApi.getProfile()
       userStore.setUser(userData)
 
       await permissionStore.loadUserPermissions()
+
+      try {
+        await menuStore.refreshMenus()
+      } catch (err) {
+        console.error('加载菜单失败:', err)
+      }
 
       return true
     } catch (err: unknown) {
@@ -84,9 +92,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     const userStore = useUserStore()
     const permissionStore = usePermissionStore()
+    const menuStore = useMenuStore()
 
     userStore.clearUser()
     permissionStore.clearUserPermissions()
+    menuStore.clearMenus()
 
     localStorage.clear()
   }
@@ -102,6 +112,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       const userStore = useUserStore()
       const permissionStore = usePermissionStore()
+      const menuStore = useMenuStore()
 
       userStore.initializeUser()
 
@@ -110,6 +121,12 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       await permissionStore.loadUserPermissions()
+
+      try {
+        await menuStore.refreshMenus()
+      } catch (err) {
+        console.error('初始化菜单失败:', err)
+      }
     }
   }
 

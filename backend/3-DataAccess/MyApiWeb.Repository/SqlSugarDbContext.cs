@@ -123,7 +123,8 @@ namespace MyApiWeb.Repository
                     typeof(Permission),
                     typeof(UserRole),
                     typeof(RolePermission),
-                    typeof(UserPermission)
+                    typeof(UserPermission),
+                    typeof(Menu)
                 );
 
                 _logger.LogInformation("数据库表创建成功");

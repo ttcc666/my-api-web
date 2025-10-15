@@ -33,6 +33,10 @@ namespace MyApiWeb.Services.Modules
             builder.RegisterType<PermissionService>()
                    .As<IPermissionService>()
                    .InstancePerLifetimeScope();
+
+            builder.RegisterType<MenuService>()
+                   .As<IMenuService>()
+                   .InstancePerLifetimeScope();
  
              // 这里可以注册其他服务
              // 例如：builder.RegisterType<ProductService>().As<IProductService>();

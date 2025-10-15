@@ -49,7 +49,6 @@ import {
   NTransfer,
   type DataTableColumns,
 } from 'naive-ui'
-import { usePermissionStore } from '@/stores/permission'
 import {
   useUserManagement,
   type UserWithRolesAndPermissions,
@@ -60,7 +59,6 @@ import type { UserDto } from '@/types/api'
 
 type User = UserDto
 
-const permissionStore = usePermissionStore()
 const {
   loading: userLoading,
   users,
@@ -110,11 +108,6 @@ const columns: DataTableColumns<User> = [
     title: '操作',
     key: 'actions',
     render(row) {
-      // 使用条件渲染替代 v-permission 指令
-      if (!permissionStore.hasPermission('manage:user_permissions')) {
-        return null
-      }
-
       return h(
         NButton,
         {

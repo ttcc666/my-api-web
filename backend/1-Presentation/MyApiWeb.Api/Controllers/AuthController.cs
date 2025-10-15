@@ -18,14 +18,18 @@ namespace MyApiWeb.Api.Controllers
     [Authorize]
     public class AuthController : ApiControllerBase<IPermissionService, Permission, string>
     {
+        private readonly IMenuService _menuService;
+
         /// <summary>
         /// 初始化认证控制器
         /// </summary>
         /// <param name="logger">日志记录器</param>
         /// <param name="permissionService">权限服务</param>
-        public AuthController(ILogger<AuthController> logger, IPermissionService permissionService)
+        /// <param name="menuService">菜单服务</param>
+        public AuthController(ILogger<AuthController> logger, IPermissionService permissionService, IMenuService menuService)
             : base(logger, permissionService)
         {
+            _menuService = menuService;
         }
 
         /// <summary>
@@ -120,6 +124,24 @@ namespace MyApiWeb.Api.Controllers
             };
 
             return Success(currentUser);
+        }
+
+        /// <summary>
+        /// 获取当前用户的菜单树
+        /// </summary>
+        /// <returns>菜单树</returns>
+        [HttpGet("me/menus")]
+        [ProducesResponseType(typeof(ApiResponse<List<MenuDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMyMenus()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Error("用户未认证", StatusCodes.Status401Unauthorized);
+            }
+
+            var menus = await _menuService.GetMenusByUserAsync(userId);
+            return Success(menus);
         }
     }
 }

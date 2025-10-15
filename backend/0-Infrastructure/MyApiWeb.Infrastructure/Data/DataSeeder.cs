@@ -16,6 +16,7 @@ namespace MyApiWeb.Infrastructure.Data
     {
         private const string AdminUserSeedName = "AdminUser";
         private const string RbacDataSeedName = "RbacData";
+        private const string MenuDataSeedName = "MenuData";
 
         /// <summary>
         /// 初始化所有种子数据
@@ -81,6 +82,24 @@ namespace MyApiWeb.Infrastructure.Data
                     {
                         logger.LogInformation("⏭️ 跳过 RBAC 数据初始化（已执行过）");
                     }
+
+                    // 初始化菜单数据
+                    if (!HasSeedExecuted(dbContext, MenuDataSeedName) || forceReseed)
+                    {
+                        var menuSeeder = services.GetService<MenuDataSeeder>();
+                        if (menuSeeder != null)
+                        {
+                            logger.LogInformation("开始初始化菜单数据...");
+                            menuSeeder.SeedAsync().Wait();
+                            MarkSeedAsExecuted(dbContext, MenuDataSeedName, "初始化前端菜单数据");
+                            logger.LogInformation("✅ 菜单数据初始化完成");
+                        }
+                    }
+                    else
+                    {
+                        logger.LogInformation("⏭️ 跳过菜单数据初始化（已执行过）");
+                    }
+
 
                     logger.LogInformation("🎉 所有种子数据检查完成");
                 }

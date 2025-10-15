@@ -1,9 +1,7 @@
 <template>
   <div class="role-management">
     <h1>角色管理</h1>
-    <n-button v-permission="'create:role'" type="primary" @click="handleCreate">
-      创建角色
-    </n-button>
+    <n-button type="primary" @click="handleCreate">创建角色</n-button>
     <n-data-table :columns="columns" :data="roles" :loading="loading" :pagination="pagination" />
 
     <!-- 创建/编辑角色的模态框 -->
@@ -50,7 +48,6 @@ import {
   type FormInst,
   type FormRules,
 } from 'naive-ui'
-import { usePermissionStore } from '@/stores/permission'
 import { RolesApi, PermissionsApi } from '@/api'
 import type { RoleDto, PermissionDto, CreateRoleDto, UpdateRoleDto } from '@/types/api'
 
@@ -59,7 +56,6 @@ type Role = RoleDto
 type Permission = PermissionDto
 
 const message = useMessage()
-const permissionStore = usePermissionStore()
 const loading = ref(false)
 const roles = ref<Role[]>([])
 const permissions = ref<Permission[]>([])
@@ -103,40 +99,28 @@ const columns: DataTableColumns<Role> = [
     title: '操作',
     key: 'actions',
     render(row) {
-      const buttons = []
-
-      // 使用条件渲染替代 v-permission 指令
-      if (permissionStore.hasPermission('edit:role')) {
-        buttons.push(
-          h(
-            NButton,
-            {
-              size: 'small',
-              type: 'primary',
-              onClick: () => handleEdit(row),
-            },
-            { default: () => '编辑' },
-          ),
-        )
-      }
-
-      if (permissionStore.hasPermission('delete:role')) {
-        buttons.push(
-          h(
-            NButton,
-            {
-              size: 'small',
-              type: 'error',
-              style: 'margin-left: 8px',
-              disabled: row.isSystem,
-              onClick: () => handleDelete(row),
-            },
-            { default: () => '删除' },
-          ),
-        )
-      }
-
-      return buttons.length > 0 ? h('div', buttons) : null
+      return h('div', [
+        h(
+          NButton,
+          {
+            size: 'small',
+            type: 'primary',
+            onClick: () => handleEdit(row),
+          },
+          { default: () => '编辑' },
+        ),
+        h(
+          NButton,
+          {
+            size: 'small',
+            type: 'error',
+            style: 'margin-left: 8px',
+            disabled: row.isSystem,
+            onClick: () => handleDelete(row),
+          },
+          { default: () => '删除' },
+        ),
+      ])
     },
   },
 ]

@@ -3,7 +3,7 @@
     <n-layout-header bordered class="header">
       <div class="logo">My App</div>
       <div class="user-info">
-        <span>欢迎，{{ userStore.username }}</span>
+        <span>欢迎，{{ userStore.username || '用户' }}</span>
         <n-button text @click="handleLogout">退出登录</n-button>
       </div>
     </n-layout-header>
@@ -44,29 +44,35 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref, computed, watch, type Component } from 'vue'
-import { NIcon } from 'naive-ui'
+import { h, ref, computed, watch, onMounted, type Component } from 'vue'
+import { NIcon, type MenuOption } from 'naive-ui'
 import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
-import { usePermissionStore } from '@/stores/permission'
+import { useMenuStore } from '@/stores/menu'
 import { useTabStore } from '@/stores/tabs'
-import {
-  HomeOutline as HomeIcon,
-  PersonOutline as UserIcon,
-  ShieldCheckmarkOutline as ShieldIcon,
-  SettingsOutline as SettingsIcon,
-} from '@vicons/ionicons5'
+import type { MenuDto } from '@/types/api'
+import { getIconComponent } from '@/utils/iconRegistry'
 import AppBreadcrumb from '@/components/navigation/AppBreadcrumb.vue'
 import AppMenuTabs from '@/components/navigation/AppMenuTabs.vue'
 
 const collapsed = ref(false)
 const authStore = useAuthStore()
 const userStore = useUserStore()
-const permissionStore = usePermissionStore()
+const menuStore = useMenuStore()
 const router = useRouter()
 const route = useRoute()
 const tabStore = useTabStore()
+
+const homeMenuIcon = resolveIcon('HomeOutline')
+
+const defaultMenuOptions: MenuOption[] = [
+  {
+    label: () => h(RouterLink, { to: '/' }, { default: () => '主页' }),
+    key: 'home',
+    icon: homeMenuIcon ? renderIcon(homeMenuIcon) : undefined,
+  },
+]
 
 // Keep-alive 缓存的视图列表（基于打开的标签页）
 const cachedViews = computed(() => {
@@ -82,33 +88,64 @@ function renderIcon(icon: Component) {
   return () => h(NIcon, null, { default: () => h(icon) })
 }
 
-const menuOptions = [
-  {
-    label: () => h(RouterLink, { to: '/' }, { default: () => '主页' }),
-    key: 'home',
-    icon: renderIcon(HomeIcon),
-  },
-  {
-    label: '系统管理',
-    key: 'system-management',
-    icon: renderIcon(SettingsIcon),
-    show: permissionStore.hasPermission('user:view') || permissionStore.hasPermission('role:view'),
-    children: [
-      {
-        label: () => h(RouterLink, { to: '/admin/users' }, { default: () => '用户管理' }),
-        key: 'user-management',
-        icon: renderIcon(UserIcon),
-        show: permissionStore.hasPermission('user:view'),
-      },
-      {
-        label: () => h(RouterLink, { to: '/admin/roles' }, { default: () => '角色管理' }),
-        key: 'role-management',
-        icon: renderIcon(ShieldIcon),
-        show: permissionStore.hasPermission('role:view'),
-      },
-    ],
-  },
-]
+const menuOptions = computed<MenuOption[]>(() => {
+  const menus = menuStore.menus
+  if (!menus || menus.length === 0) {
+    return defaultMenuOptions
+  }
+
+  const options = menus
+    .map(transformMenuToOption)
+    .filter((option): option is MenuOption => option !== null)
+
+  return options.length > 0 ? options : defaultMenuOptions
+})
+
+function resolveIcon(name?: string | null): Component | null {
+  return getIconComponent(name)
+}
+
+function resolveMenuKey(menu: MenuDto): string {
+  if (menu.routeName) {
+    return menu.routeName
+  }
+  if (menu.routePath) {
+    return menu.routePath
+  }
+  return menu.code || menu.id
+}
+
+function createMenuLabel(menu: MenuDto) {
+  if (menu.routePath) {
+    const target = menu.routePath
+    return () => h(RouterLink, { to: target }, { default: () => menu.title })
+  }
+  return menu.title
+}
+
+function transformMenuToOption(menu: MenuDto): MenuOption | null {
+  const children = menu.children
+    ?.map(transformMenuToOption)
+    .filter((child): child is MenuOption => child !== null)
+
+  if ((!children || children.length === 0) && !menu.routePath) {
+    return null
+  }
+
+  const iconComponent = resolveIcon(menu.icon ?? undefined)
+
+  const option: MenuOption = {
+    label: createMenuLabel(menu),
+    key: resolveMenuKey(menu),
+    icon: iconComponent ? renderIcon(iconComponent) : undefined,
+  }
+
+  if (children && children.length > 0) {
+    option.children = children
+  }
+
+  return option
+}
 
 watch(
   () => route.fullPath,
@@ -117,6 +154,17 @@ watch(
   },
   { immediate: true },
 )
+
+onMounted(async () => {
+  if (!authStore.isAuthenticated) {
+    return
+  }
+  try {
+    await menuStore.ensureLoaded()
+  } catch (error) {
+    console.error('加载菜单失败:', error)
+  }
+})
 
 const handleLogout = () => {
   authStore.logout()

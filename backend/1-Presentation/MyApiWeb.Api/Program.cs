@@ -16,9 +16,13 @@ try
     builder.Host.AddAutofacContainer(containerBuilder =>
     {
         // 注册 RBAC 数据种子服务
-        containerBuilder.RegisterType<RbacDataSeeder>()
-            .AsSelf()
-            .InstancePerLifetimeScope();
+        containerBuilder.RegisterType<MyApiWeb.Infrastructure.Data.RbacDataSeeder>()
+                       .AsSelf()
+                       .InstancePerLifetimeScope();
+
+        containerBuilder.RegisterType<MyApiWeb.Infrastructure.Data.MenuDataSeeder>()
+                       .AsSelf()
+                       .InstancePerLifetimeScope();
     });
 
     // 添加服务到容器

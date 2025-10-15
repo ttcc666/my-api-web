@@ -1,5 +1,10 @@
 import apiClient from '@/utils/request'
-import type { CurrentUserInfoDto, UserPermissionInfoDto, UserPermissionCheckDto } from '@/types/api'
+import type {
+  CurrentUserInfoDto,
+  UserPermissionInfoDto,
+  UserPermissionCheckDto,
+  MenuDto,
+} from '@/types/api'
 
 /**
  * 认证相关 API 服务
@@ -26,6 +31,13 @@ export class AuthApi {
     return apiClient.get('/auth/me/permissions/check', {
       params: { permission },
     })
+  }
+
+  /**
+   * 获取当前用户的菜单树
+   */
+  static async getCurrentUserMenus(): Promise<MenuDto[]> {
+    return apiClient.get('/auth/me/menus')
   }
 }
 
