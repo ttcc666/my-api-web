@@ -13,6 +13,7 @@
     <!-- Dependency Injection -->
     <PackageReference Include="Autofac" Version="8.4.0" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Savorboard.CAP.InMemoryMessageQueue" Version="8.2.1" />
 
     <!-- Logging -->
     <PackageReference Include="Serilog" Version="4.2.0" />

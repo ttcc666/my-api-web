@@ -5,6 +5,7 @@
 - [为什么需要自定义集成](#为什么需要自定义集成)
 - [核心集成代码](#核心集成代码)
 - [服务配置](#服务配置)
+- [CAP Dashboard](#cap-dashboard)
 - [实际使用示例](#实际使用示例)
 - [异步支持说明](#异步支持说明)
 - [最佳实践](#最佳实践)
@@ -186,6 +187,33 @@ public static class CapServiceExtensions
 ```csharp
 builder.Services.AddCapMessageBus(builder.Configuration);
 ```
+
+---
+
+## CAP Dashboard
+
+CAP Dashboard 提供了一个可视化界面来监控消息的发布和消费情况。
+
+### 访问 Dashboard
+
+启动应用后，访问：`http://localhost:5000/cap` 或 `https://localhost:5001/cap`
+
+### Dashboard 功能
+
+- **Published Messages**: 查看已发布的消息列表
+- **Received Messages**: 查看已接收的消息列表
+- **Subscribers**: 查看所有订阅者
+- **实时监控**: 查看消息处理状态（成功/失败/重试）
+
+### 配置说明
+
+Dashboard 已在 `CapServiceExtensions.cs` 中自动配置：
+
+```csharp
+options.UseDashboard();
+```
+
+**注意**: 生产环境建议添加身份验证保护 Dashboard 访问。
 
 ---
 

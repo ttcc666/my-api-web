@@ -1,4 +1,5 @@
 using DotNetCore.CAP;
+using Savorboard.CAP.InMemoryMessageQueue;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,9 @@ public static class CapServiceExtensions
             options.FailedRetryInterval = configuration.GetValue<int>("CAP:FailedRetryInterval", 60);
             options.ConsumerThreadCount = configuration.GetValue<int>("CAP:ConsumerThreadCount", 1);
             
+            // 配置 Dashboard
+            //options.UseDashboard();
+
             // 配置失败回调
             options.FailedThresholdCallback = failed =>
             {
@@ -103,6 +107,10 @@ public static class CapServiceExtensions
 
         switch (transportType.ToLower())
         {
+            case "inmemory":
+                options.UseInMemoryMessageQueue();
+                break;
+                
             case "rabbitmq":
                 options.UseRabbitMQ(rabbitOptions =>
                 {
@@ -147,10 +155,6 @@ public static class CapServiceExtensions
                     redisOptions.Configuration = StackExchange.Redis.ConfigurationOptions.Parse(redisConfig);
                     redisOptions.StreamEntriesCount = (uint)configuration.GetValue<int>("CAP:Transport:StreamEntriesCount", 10);
                 });
-                break;
-
-            case "inmemory":
-                // InMemory传输不需要额外配置
                 break;
 
             default:
