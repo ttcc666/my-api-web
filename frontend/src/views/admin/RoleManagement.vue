@@ -1,67 +1,95 @@
+
 <template>
   <div class="role-management">
-    <h1>角色管理</h1>
-    <n-button type="primary" @click="handleCreate">创建角色</n-button>
-    <n-data-table :columns="columns" :data="roles" :loading="loading" :pagination="pagination" />
-
-    <!-- 创建/编辑角色的模态框 -->
-    <n-modal v-model:show="showModal" preset="card" style="width: 600px" :title="modalTitle">
-      <n-form ref="formRef" :model="currentRole" :rules="rules">
-        <n-form-item path="name" label="角色名称">
-          <n-input v-model:value="currentRole.name" :disabled="currentRole.isSystem" />
-        </n-form-item>
-        <n-form-item path="description" label="描述">
-          <n-input v-model:value="currentRole.description" type="textarea" />
-        </n-form-item>
-        <n-form-item label="权限">
-          <n-transfer
-            v-model:value="currentRole.permissionIds"
-            :options="permissionOptions"
-            source-filterable
-          />
-        </n-form-item>
-        <n-form-item v-if="isEdit" label="状态">
-          <n-switch v-model:value="currentRole.isEnabled" :disabled="currentRole.isSystem" />
-        </n-form-item>
-      </n-form>
-      <template #footer>
-        <n-button @click="showModal = false">取消</n-button>
-        <n-button type="primary" @click="handleSubmit">确定</n-button>
+    <div class="role-management__header">
+      <h1>角色管理</h1>
+      <a-button type="primary" @click="handleCreate">创建角色</a-button>
+    </div>
+    <a-table
+      :columns="columns"
+      :data-source="tableData"
+      :loading="loading"
+      :pagination="pagination"
+      row-key="id"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'isSystem'">
+          <a-tag :color="record.isSystem ? 'blue' : 'default'">
+            {{ record.isSystem ? '是' : '否' }}
+          </a-tag>
+        </template>
+        <template v-else-if="column.key === 'isEnabled'">
+          <a-tag :color="record.isEnabled ? 'green' : 'red'">
+            {{ record.isEnabled ? '启用' : '禁用' }}
+          </a-tag>
+        </template>
+        <template v-else-if="column.key === 'actions'">
+          <a-space>
+            <a-button type="link" @click="handleEdit(record)">编辑</a-button>
+            <a-button type="link" danger :disabled="record.isSystem" @click="handleDelete(record)">
+              删除
+            </a-button>
+          </a-space>
+        </template>
       </template>
-    </n-modal>
+    </a-table>
+
+    <a-modal
+      v-model:open="showModal"
+      :title="modalTitle"
+      width="600px"
+      :confirm-loading="submitLoading"
+      @ok="handleSubmit"
+    >
+      <a-form ref="formRef" layout="vertical" :model="currentRole" :rules="rules">
+        <a-form-item name="name" label="角色名称">
+          <a-input v-model:value="currentRole.name" :disabled="currentRole.isSystem" />
+        </a-form-item>
+        <a-form-item name="description" label="描述">
+          <a-textarea v-model:value="currentRole.description" :rows="3" />
+        </a-form-item>
+        <a-form-item label="权限">
+          <a-transfer
+            v-model:targetKeys="currentRole.permissionIds"
+            :data-source="permissionDataSource"
+            :titles="['可用权限', '已分配权限']"
+            :render="renderPermissionItem"
+            :filter-option="filterPermission"
+            show-search
+            :list-style="transferListStyle"
+          />
+        </a-form-item>
+        <a-form-item v-if="isEdit" label="状态">
+          <a-switch
+            v-model:checked="currentRole.isEnabled"
+            :disabled="currentRole.isSystem"
+            checked-children="启用"
+            un-checked-children="禁用"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, h } from 'vue'
-import {
-  NButton,
-  NDataTable,
-  NModal,
-  NForm,
-  NFormItem,
-  NInput,
-  NSwitch,
-  NTransfer,
-  useMessage,
-  type DataTableColumns,
-  type FormInst,
-  type FormRules,
-} from 'naive-ui'
-import { RolesApi } from '@/api'
+import { computed, onMounted, ref } from 'vue'
+import type { ColumnsType } from 'ant-design-vue/es/table'
+import type { FormInstance } from 'ant-design-vue'
+import { RolesApi, PermissionsApi } from '@/api'
+import { message, modal } from '@/plugins/antd'
 import type { RoleDto, PermissionDto, CreateRoleDto, UpdateRoleDto } from '@/types/api'
 
-// 类型别名以保持兼容性
 type Role = RoleDto
 type Permission = PermissionDto
 
-const message = useMessage()
 const loading = ref(false)
 const roles = ref<Role[]>([])
 const permissions = ref<Permission[]>([])
 const showModal = ref(false)
 const isEdit = ref(false)
-const formRef = ref<FormInst | null>(null)
+const submitLoading = ref(false)
+const formRef = ref<FormInstance>()
 
 const defaultRole = (): Role & { permissionIds: string[] } => ({
   id: '',
@@ -78,73 +106,71 @@ const currentRole = ref(defaultRole())
 
 const modalTitle = computed(() => (isEdit.value ? '编辑角色' : '创建角色'))
 
-const permissionOptions = computed(() =>
-  permissions.value.map((p) => ({
-    label: p.displayName,
-    value: p.id,
+interface TransferOption {
+  key: string
+  title: string
+  disabled?: boolean
+}
+
+const permissionDataSource = computed<TransferOption[]>(() =>
+  permissions.value.map((permission) => ({
+    key: permission.id,
+    title: `${permission.group ? `[${permission.group}] ` : ''}${permission.displayName}`,
     disabled: false,
   })),
 )
 
-const rules: FormRules = {
-  name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
-}
-
-const columns: DataTableColumns<Role> = [
-  { title: '角色名称', key: 'name' },
-  { title: '描述', key: 'description' },
-  { title: '系统角色', key: 'isSystem', render: (row) => (row.isSystem ? '是' : '否') },
-  { title: '状态', key: 'isEnabled', render: (row) => (row.isEnabled ? '启用' : '禁用') },
-  {
-    title: '操作',
-    key: 'actions',
-    render(row) {
-      return h('div', [
-        h(
-          NButton,
-          {
-            size: 'small',
-            type: 'primary',
-            onClick: () => handleEdit(row),
-          },
-          { default: () => '编辑' },
-        ),
-        h(
-          NButton,
-          {
-            size: 'small',
-            type: 'error',
-            style: 'margin-left: 8px',
-            disabled: row.isSystem,
-            onClick: () => handleDelete(row),
-          },
-          { default: () => '删除' },
-        ),
-      ])
-    },
-  },
+const columns: ColumnsType<Role> = [
+  { title: '角色名称', dataIndex: 'name', key: 'name' },
+  { title: '描述', dataIndex: 'description', key: 'description' },
+  { title: '系统角色', dataIndex: 'isSystem', key: 'isSystem' },
+  { title: '状态', dataIndex: 'isEnabled', key: 'isEnabled' },
+  { title: '操作', key: 'actions' },
 ]
 
 const pagination = {
   pageSize: 10,
 }
 
+const rules = {
+  name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
+}
+
+const transferListStyle = {
+  width: '45%',
+  height: '320px',
+}
+
+const tableData = computed(() => roles.value)
+
+function filterPermission(inputValue: string, item: TransferOption) {
+  return (item.title || '').toLowerCase().includes(inputValue.toLowerCase())
+}
+
+function renderPermissionItem(item: TransferOption) {
+  return item.title || ''
+}
+
 async function fetchRoles() {
   try {
     loading.value = true
     const roleList = await RolesApi.getAllRoles()
-    console.log('Fetched roles:', roleList) // 添加日志
-    if (Array.isArray(roleList)) {
-      roles.value = roleList
-    } else {
-      console.error('Expected an array of roles, but got:', roleList)
-      roles.value = []
-    }
+    roles.value = Array.isArray(roleList) ? roleList : []
   } catch (error) {
     console.error('获取角色列表失败:', error)
     message.error('获取角色列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function fetchAllPermissions() {
+  try {
+    const permissionList = await PermissionsApi.getAllPermissions()
+    permissions.value = Array.isArray(permissionList) ? permissionList : []
+  } catch (error) {
+    console.error('获取权限列表失败:', error)
+    message.error('获取权限列表失败')
   }
 }
 
@@ -158,64 +184,93 @@ function handleEdit(role: Role) {
   isEdit.value = true
   currentRole.value = {
     ...role,
-    permissionIds: role.permissions?.map((p) => p.id) || [],
+    permissionIds: role.permissions?.map((permission) => permission.id) ?? [],
   }
   showModal.value = true
 }
 
-async function handleDelete(role: Role) {
-  try {
-    await RolesApi.deleteRole(role.id)
-    message.success('删除成功')
-    await fetchRoles()
-  } catch (error) {
-    console.error('删除失败:', error)
-    message.error('删除失败')
-  }
-}
-
-async function handleSubmit() {
-  formRef.value?.validate(async (errors) => {
-    if (!errors) {
+function handleDelete(role: Role) {
+  modal.confirm({
+    title: '删除角色',
+    content: `确定要删除角色「${role.name}」吗？`,
+    okType: 'danger',
+    onOk: async () => {
       try {
-        if (isEdit.value) {
-          const updateData: UpdateRoleDto = {
-            name: currentRole.value.name,
-            description: currentRole.value.description,
-            isEnabled: currentRole.value.isEnabled,
-          }
-          await RolesApi.updateRole(currentRole.value.id, updateData)
-          await RolesApi.assignRolePermissions(currentRole.value.id, {
-            permissionIds: currentRole.value.permissionIds,
-          })
-          message.success('更新成功')
-        } else {
-          const createData: CreateRoleDto = {
-            name: currentRole.value.name,
-            description: currentRole.value.description,
-            isEnabled: currentRole.value.isEnabled,
-            permissionIds: currentRole.value.permissionIds,
-          }
-          await RolesApi.createRole(createData)
-          message.success('创建成功')
-        }
-        showModal.value = false
+        await RolesApi.deleteRole(role.id)
+        message.success('删除成功')
         await fetchRoles()
       } catch (error) {
-        console.error(isEdit.value ? '更新失败' : '创建失败', error)
-        message.error(isEdit.value ? '更新失败' : '创建失败')
+        console.error('删除失败:', error)
+        message.error('删除失败')
       }
-    }
+    },
   })
 }
 
-onMounted(() => {
-  fetchRoles()
+async function handleSubmit() {
+  try {
+    await formRef.value?.validate()
+  } catch {
+    return
+  }
+
+  submitLoading.value = true
+
+  try {
+    if (isEdit.value) {
+      const updateData: UpdateRoleDto = {
+        name: currentRole.value.name,
+        description: currentRole.value.description,
+        isEnabled: currentRole.value.isEnabled,
+      }
+      await RolesApi.updateRole(currentRole.value.id, updateData)
+      await RolesApi.assignRolePermissions(currentRole.value.id, {
+        permissionIds: currentRole.value.permissionIds,
+      })
+      message.success('更新成功')
+    } else {
+      const createData: CreateRoleDto = {
+        name: currentRole.value.name,
+        description: currentRole.value.description,
+        isEnabled: currentRole.value.isEnabled,
+        permissionIds: currentRole.value.permissionIds,
+      }
+      await RolesApi.createRole(createData)
+      message.success('创建成功')
+    }
+    showModal.value = false
+    await fetchRoles()
+  } catch (error) {
+    console.error(isEdit.value ? '更新失败:' : '创建失败:', error)
+    message.error(isEdit.value ? '更新失败' : '创建失败')
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([fetchRoles(), fetchAllPermissions()])
 })
 </script>
 
 <style scoped>
 .role-management {
-  padding: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.role-management__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.role-management__header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
 }
 </style>

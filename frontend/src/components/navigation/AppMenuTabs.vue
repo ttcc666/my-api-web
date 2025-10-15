@@ -1,21 +1,20 @@
 <template>
-  <n-tabs
-    type="card"
+  <a-tabs
+    type="editable-card"
     size="small"
-    :value="activeKey"
-    @update:value="handleUpdateValue"
-    closable
-    @close="handleClose"
+    hideAdd
+    :activeKey="activeKey"
+    @change="handleChange"
+    @edit="handleEdit"
     class="app-menu-tabs"
   >
-    <n-tab-pane
+    <a-tab-pane
       v-for="tab in tabs"
       :key="tab.key"
-      :name="tab.key"
       :tab="tab.label"
       :closable="tab.closable"
     />
-  </n-tabs>
+  </a-tabs>
 </template>
 
 <script setup lang="ts">
@@ -27,13 +26,13 @@ const router = useRouter()
 const tabStore = useTabStore()
 const { tabs, activeKey } = storeToRefs(tabStore)
 
-const navigateTo = async (path: string) => {
+async function navigateTo(path: string) {
   if (router.currentRoute.value.fullPath !== path) {
     await router.push(path)
   }
 }
 
-const handleUpdateValue = async (value: string | number) => {
+async function handleChange(value: string) {
   const key = String(value)
   tabStore.activate(key)
   const target = tabs.value.find((item) => item.key === key)
@@ -42,8 +41,14 @@ const handleUpdateValue = async (value: string | number) => {
   }
 }
 
-const handleClose = async (value: string | number) => {
-  const key = String(value)
+async function handleEdit(targetKey: string | MouseEvent, action: 'add' | 'remove') {
+  if (action !== 'remove') {
+    return
+  }
+  const key = typeof targetKey === 'string' ? targetKey : ''
+  if (!key) {
+    return
+  }
   const next = tabStore.remove(key)
   if (next) {
     await navigateTo(next.path)

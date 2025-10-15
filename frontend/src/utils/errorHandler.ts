@@ -1,4 +1,4 @@
-import { message, notification } from '@/plugins/naive'
+import { message, notification } from '@/plugins/antd'
 import router from '@/router'
 import type { AxiosError } from 'axios'
 
@@ -286,9 +286,9 @@ export function handleError(error: unknown, options?: ErrorHandlerOptions): void
     message.error(displayMessage)
   } else if (errorInfo.showNotification) {
     notification.error({
-      title: errorInfo.title || '错误',
-      content: displayMessage,
-      duration: 5000,
+      message: errorInfo.title || '错误',
+      description: displayMessage,
+      duration: 5,
     })
   }
 

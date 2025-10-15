@@ -1,5 +1,4 @@
 import { ref } from 'vue'
-import { useMessage } from 'naive-ui'
 import { UsersApi, PermissionsApi } from '@/api'
 import type {
   UserDto,
@@ -7,6 +6,7 @@ import type {
   AssignUserPermissionsDto,
   UserPermissionInfoDto,
 } from '@/types/api'
+import { message } from '@/plugins/antd'
 
 export interface UserWithRolesAndPermissions extends UserDto {
   roleIds: string[]
@@ -16,7 +16,6 @@ export interface UserWithRolesAndPermissions extends UserDto {
 }
 
 export function useUserManagement() {
-  const message = useMessage()
   const loading = ref(false)
   const users = ref<UserWithRolesAndPermissions[]>([])
 

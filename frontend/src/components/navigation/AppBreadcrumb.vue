@@ -1,11 +1,11 @@
 <template>
   <div class="app-breadcrumb">
-    <n-breadcrumb>
-      <n-breadcrumb-item v-for="item in items" :key="item.key">
+    <a-breadcrumb>
+      <a-breadcrumb-item v-for="item in items" :key="item.key">
         <RouterLink v-if="item.to" :to="item.to">{{ item.label }}</RouterLink>
         <span v-else>{{ item.label }}</span>
-      </n-breadcrumb-item>
-    </n-breadcrumb>
+      </a-breadcrumb-item>
+    </a-breadcrumb>
   </div>
 </template>
 

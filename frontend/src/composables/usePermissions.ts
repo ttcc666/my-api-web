@@ -1,10 +1,9 @@
 import { ref } from 'vue'
-import { useMessage } from 'naive-ui'
 import { PermissionsApi } from '@/api'
 import type { PermissionDto } from '@/types/api'
+import { message } from '@/plugins/antd'
 
 export function usePermissions() {
-  const message = useMessage()
   const permissions = ref<PermissionDto[]>([])
 
   async function fetchPermissions() {

@@ -2,58 +2,49 @@
   <div class="icon-picker">
     <div class="icon-picker__control">
       <div class="icon-picker__preview" :class="{ 'icon-picker__preview--empty': !selectedIcon }">
-        <n-icon v-if="selectedIcon" size="22">
-          <component :is="selectedIcon" />
-        </n-icon>
+        <component v-if="selectedIcon" :is="selectedIcon" class="icon-picker__preview-icon" />
         <span v-else>未选择</span>
       </div>
-      <n-input
+      <a-input
         class="icon-picker__input"
         :value="modelValue ?? ''"
         placeholder="请选择图标"
         readonly
       />
-      <n-button secondary type="primary" @click="showDrawer = true">选择</n-button>
-      <n-button v-if="modelValue" quaternary type="error" @click="handleClear">清除</n-button>
+      <a-button type="primary" @click="showDrawer = true">选择</a-button>
+      <a-button v-if="modelValue" type="link" danger @click="handleClear">清除</a-button>
     </div>
 
-    <n-drawer v-model:show="showDrawer" width="720">
-      <n-drawer-content title="选择图标">
-        <div class="icon-picker__drawer-header">
-          <n-input
-            v-model:value="query"
-            clearable
-            placeholder="搜索图标名称，如 home"
-            autofocus
-          />
-          <span class="icon-picker__count">共 {{ filteredIcons.length }} 个图标</span>
-        </div>
+    <a-drawer v-model:open="showDrawer" width="720" title="选择图标">
+      <div class="icon-picker__drawer-header">
+        <a-input-search
+          v-model:value="query"
+          allow-clear
+          autofocus
+          placeholder="搜索图标名称，如 home"
+        />
+        <span class="icon-picker__count">共 {{ filteredIcons.length }} 个图标</span>
+      </div>
 
-        <n-grid :cols="6" :x-gap="12" :y-gap="12" responsive="screen" class="icon-picker__grid">
-          <template v-for="option in filteredIcons" :key="option.name">
-            <n-gi>
-              <button
-                type="button"
-                class="icon-picker__item"
-                :class="{ 'icon-picker__item--active': option.name === modelValue }"
-                @click="handleSelect(option.name)"
-              >
-                <n-icon size="24">
-                  <component :is="option.component" />
-                </n-icon>
-                <span>{{ option.name }}</span>
-              </button>
-            </n-gi>
-          </template>
-        </n-grid>
-      </n-drawer-content>
-    </n-drawer>
+      <div class="icon-picker__grid">
+        <button
+          v-for="option in filteredIcons"
+          :key="option.name"
+          type="button"
+          class="icon-picker__item"
+          :class="{ 'icon-picker__item--active': option.name === modelValue }"
+          @click="handleSelect(option.name)"
+        >
+          <component :is="option.component" class="icon-picker__item-icon" />
+          <span>{{ option.name }}</span>
+        </button>
+      </div>
+    </a-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, withDefaults } from 'vue'
-import { NButton, NDrawer, NDrawerContent, NGrid, NGi, NIcon, NInput } from 'naive-ui'
 import type { Component } from 'vue'
 import { getIconComponent, getAllIconOptions } from '@/utils/iconRegistry'
 
@@ -85,12 +76,12 @@ const filteredIcons = computed(() => {
 
 const selectedIcon = computed<Component | null>(() => getIconComponent(props.modelValue))
 
-const handleSelect = (name: string) => {
+function handleSelect(name: string) {
   emit('update:modelValue', name)
   showDrawer.value = false
 }
 
-const handleClear = () => {
+function handleClear() {
   emit('update:modelValue', null)
 }
 </script>
@@ -114,15 +105,19 @@ const handleClear = () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--n-border-color);
+  border: 1px solid #d9d9d9;
   border-radius: 6px;
-  background-color: var(--n-color);
-  color: var(--n-text-color);
+  background-color: #fafafa;
+  color: rgba(0, 0, 0, 0.88);
 }
 
 .icon-picker__preview--empty {
   font-size: 12px;
-  color: var(--n-text-color-disabled);
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.icon-picker__preview-icon {
+  font-size: 22px;
 }
 
 .icon-picker__input {
@@ -139,17 +134,19 @@ const handleClear = () => {
 
 .icon-picker__count {
   font-size: 12px;
-  color: var(--n-text-color-disabled);
+  color: rgba(0, 0, 0, 0.45);
 }
 
 .icon-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
   max-height: 60vh;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 4px;
 }
 
 .icon-picker__item {
-  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -158,21 +155,25 @@ const handleClear = () => {
   padding: 12px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background-color: transparent;
+  background-color: #fff;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--n-text-color);
+  color: rgba(0, 0, 0, 0.88);
 }
 
 .icon-picker__item:hover {
-  border-color: var(--n-border-color);
-  background-color: var(--n-color);
+  border-color: #d9d9d9;
+  background-color: #f5f5f5;
 }
 
 .icon-picker__item--active {
-  border-color: var(--n-primary-color);
-  background-color: var(--n-primary-color-suppl);
-  color: var(--n-primary-color-hover);
+  border-color: #1677ff;
+  background-color: #e6f4ff;
+  color: #1677ff;
+}
+
+.icon-picker__item-icon {
+  font-size: 24px;
 }
 
 .icon-picker__item span {

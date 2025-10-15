@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import Components from 'unplugin-vue-components/vite'
-import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
+import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -12,7 +12,7 @@ export default defineConfig({
     vue(),
     vueDevTools(),
     Components({
-      resolvers: [NaiveUiResolver()],
+      resolvers: [AntDesignVueResolver({ importStyle: false })],
     }),
   ],
   resolve: {
@@ -43,11 +43,11 @@ export default defineConfig({
           // Vue 核心库
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
           // UI 库
-          'naive-ui': ['naive-ui'],
+          'ant-design-vue': ['ant-design-vue'],
           // 工具库
           utils: ['axios'],
           // 图标库
-          icons: ['@vicons/ionicons5'],
+          icons: ['@ant-design/icons-vue'],
         },
         // 用于从入口点创建的块的打包输出格式[name]表示文件名,[hash]表示该文件内容hash值
         entryFileNames: 'assets/js/[name]-[hash].js',
@@ -84,7 +84,7 @@ export default defineConfig({
   },
   // 优化依赖预构建
   optimizeDeps: {
-    include: ['vue', 'vue-router', 'pinia', 'axios', 'naive-ui'],
+    include: ['vue', 'vue-router', 'pinia', 'axios', 'ant-design-vue', '@ant-design/icons-vue'],
     exclude: ['vite-plugin-vue-devtools'],
   },
 })

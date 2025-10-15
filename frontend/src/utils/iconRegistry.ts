@@ -1,9 +1,9 @@
 import type { Component } from 'vue'
-import * as Ionicons from '@vicons/ionicons5'
+import * as AntIcons from '@ant-design/icons-vue'
 
 type IconEntry = [string, Component]
 
-const rawEntries = Object.entries(Ionicons) as Array<[string, unknown]>
+const rawEntries = Object.entries(AntIcons) as Array<[string, unknown]>
 
 const iconEntries: IconEntry[] = rawEntries
   .filter(([, value]) => typeof value === 'object' || typeof value === 'function')

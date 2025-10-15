@@ -1,115 +1,156 @@
+
 <template>
   <div class="menu-management">
-    <div class="page-header">
+    <div class="menu-management__header">
       <h1>菜单管理</h1>
-      <div class="header-actions">
-        <n-button quaternary :loading="loading" @click="handleRefresh">刷新</n-button>
-        <n-button type="primary" @click="handleCreateRoot">新增菜单</n-button>
-      </div>
+      <a-space>
+        <a-button :loading="loading" @click="handleRefresh">刷新</a-button>
+        <a-button type="primary" @click="handleCreateRoot">新增菜单</a-button>
+      </a-space>
     </div>
 
-    <n-data-table
+    <a-table
       :columns="columns"
-      :data="menuTree"
+      :data-source="tableData"
       :loading="loading"
-      :row-key="rowKey"
-      default-expand-all
-      :bordered="false"
-    />
-
-    <n-modal v-model:show="showModal" preset="card" :title="modalTitle" style="width: 720px">
-      <n-form ref="formRef" :model="form" :rules="rules" label-placement="top">
-        <n-grid cols="2" x-gap="24" y-gap="12">
-          <n-form-item-gi label="名称" path="title">
-            <n-input v-model:value="form.title" placeholder="请输入菜单名称" />
-          </n-form-item-gi>
-          <n-form-item-gi label="编码" path="code">
-            <n-input
-              v-model:value="form.code"
-              placeholder="请输入唯一编码"
-              :disabled="!isCreateMode"
-            />
-          </n-form-item-gi>
-          <n-form-item-gi label="类型" path="type">
-            <n-select v-model:value="form.type" :options="typeOptions" />
-          </n-form-item-gi>
-          <n-form-item-gi label="上级菜单" path="parentId">
-            <n-tree-select
-              v-model:value="form.parentId"
-              :options="parentOptions"
-              placeholder="选择上级菜单"
-              clearable
-              :disabled="parentOptions.length === 0"
-            />
-          </n-form-item-gi>
-          <n-form-item-gi label="图标" path="icon">
-            <icon-picker v-model="form.icon" />
-          </n-form-item-gi>
-          <n-form-item-gi label="排序" path="order">
-            <n-input-number v-model:value="form.order" :min="0" />
-          </n-form-item-gi>
-          <n-form-item-gi label="路由名称" path="routeName">
-            <n-input
-              v-model:value="form.routeName"
-              placeholder="menu-management"
-              :disabled="isDirectory"
-            />
-          </n-form-item-gi>
-          <n-form-item-gi label="路由路径" path="routePath">
-            <n-input
-              v-model:value="form.routePath"
-              placeholder="/admin/menus"
-              :disabled="isDirectory"
-            />
-          </n-form-item-gi>
-          <n-form-item-gi label="权限编码" path="permissionCode">
-            <n-input
-              v-model:value="form.permissionCode"
-              placeholder="menu:view"
-              :disabled="isDirectory"
-            />
-          </n-form-item-gi>
-          <n-form-item-gi label="启用" path="isEnabled">
-            <n-switch v-model:value="form.isEnabled" />
-          </n-form-item-gi>
-          <n-form-item-gi span="2" label="描述" path="description">
-            <n-input v-model:value="form.description" type="textarea" rows="3" />
-          </n-form-item-gi>
-        </n-grid>
-      </n-form>
-      <template #footer>
-        <n-button @click="showModal = false">取消</n-button>
-        <n-button type="primary" :loading="saving" @click="handleSubmit">保存</n-button>
+      :pagination="false"
+      row-key="id"
+      :defaultExpandAllRows="true"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'type'">
+          <a-tag :color="record.type === MenuType.Directory ? 'blue' : 'green'">
+            {{ record.type === MenuType.Directory ? '目录' : '页面' }}
+          </a-tag>
+        </template>
+        <template v-else-if="column.key === 'permissionCode'">
+          {{ record.permissionCode || '-' }}
+        </template>
+        <template v-else-if="column.key === 'isEnabled'">
+          <a-tag :color="record.isEnabled ? 'green' : 'red'">
+            {{ record.isEnabled ? '启用' : '禁用' }}
+          </a-tag>
+        </template>
+        <template v-else-if="column.key === 'actions'">
+          <a-space>
+            <a-button
+              v-if="record.type === MenuType.Directory"
+              type="link"
+              @click="handleAddChild(record)"
+            >
+              新增子菜单
+            </a-button>
+            <a-button type="link" @click="handleEdit(record)">编辑</a-button>
+            <a-button type="link" danger @click="handleDelete(record)">删除</a-button>
+          </a-space>
+        </template>
       </template>
-    </n-modal>
+    </a-table>
+
+    <a-modal
+      v-model:open="showModal"
+      :title="modalTitle"
+      width="720px"
+      :confirm-loading="submitLoading"
+      @ok="handleSubmit"
+    >
+      <a-form ref="formRef" layout="vertical" :model="form" :rules="rules">
+        <a-row :gutter="[24, 12]">
+          <a-col :xs="24" :md="12">
+            <a-form-item name="title" label="名称">
+              <a-input v-model:value="form.title" placeholder="请输入菜单名称" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item name="code" label="编码">
+              <a-input
+                v-model:value="form.code"
+                placeholder="请输入唯一编码"
+                :disabled="!isCreateMode"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item name="type" label="类型">
+              <a-select v-model:value="form.type" :options="typeOptions" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item name="parentId" label="上级菜单">
+              <a-tree-select
+                v-model:value="form.parentId"
+                :tree-data="parentOptions"
+                placeholder="选择上级菜单"
+                allow-clear
+                :disabled="parentOptions.length === 0"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item name="icon" label="图标">
+              <icon-picker v-model="form.icon" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item name="order" label="排序">
+              <a-input-number v-model:value="form.order" :min="0" class="w-100" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item name="routeName" label="路由名称">
+              <a-input
+                v-model:value="form.routeName"
+                placeholder="menu-management"
+                :disabled="isDirectory"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item name="routePath" label="路由路径">
+              <a-input
+                v-model:value="form.routePath"
+                placeholder="/admin/menus"
+                :disabled="isDirectory"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item name="permissionCode" label="权限编码">
+              <a-input
+                v-model:value="form.permissionCode"
+                placeholder="menu:view"
+                :disabled="isDirectory"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item name="isEnabled" label="启用">
+              <a-switch
+                v-model:checked="form.isEnabled"
+                checked-children="启用"
+                un-checked-children="禁用"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-item name="description" label="描述">
+              <a-textarea v-model:value="form.description" :rows="3" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, onMounted, watch } from 'vue'
-import {
-  NButton,
-  NDataTable,
-  NForm,
-  NFormItemGi,
-  NGrid,
-  NInput,
-  NModal,
-  NSwitch,
-  NTreeSelect,
-  NInputNumber,
-  NTag,
-  NSpace,
-  useMessage,
-  useDialog,
-  type DataTableColumns,
-  type FormInst,
-  type FormRules,
-  type TreeSelectOption,
-} from 'naive-ui'
+import { computed, onMounted, ref, watch } from 'vue'
+import type { ColumnsType } from 'ant-design-vue/es/table'
+import type { FormInstance } from 'ant-design-vue'
+import { MenuType, type MenuDto, type CreateMenuDto, type UpdateMenuDto } from '@/types/api'
 import { useMenuManagement } from '@/composables/useMenuManagement'
 import IconPicker from '@/components/IconPicker.vue'
-import { MenuType, type MenuDto, type CreateMenuDto, type UpdateMenuDto } from '@/types/api'
+import { message, modal } from '@/plugins/antd'
 
 interface MenuForm {
   id: string | null
@@ -126,14 +167,17 @@ interface MenuForm {
   description: string
 }
 
-type ModalMode = 'create' | 'edit'
-
-const message = useMessage()
-const dialog = useDialog()
+interface TreeNode {
+  title: string
+  value: string
+  key: string
+  disabled?: boolean
+  children?: TreeNode[]
+}
 
 const {
   menuTree,
-  loading: menuLoading,
+  loading: loadingRef,
   error,
   fetchMenuTree,
   createMenu,
@@ -141,14 +185,15 @@ const {
   deleteMenu,
 } = useMenuManagement()
 
-const loading = computed(() => menuLoading.value)
+const loading = computed(() => loadingRef.value)
+const tableData = computed(() => menuTree.value)
 
+const modalMode = ref<'create' | 'edit'>('create')
 const showModal = ref(false)
-const modalMode = ref<ModalMode>('create')
-const saving = ref(false)
-const formRef = ref<FormInst | null>(null)
+const submitLoading = ref(false)
 
-const createDefaultForm = (): MenuForm => ({
+const formRef = ref<FormInstance>()
+const form = ref<MenuForm>({
   id: null,
   code: '',
   title: '',
@@ -163,176 +208,44 @@ const createDefaultForm = (): MenuForm => ({
   description: '',
 })
 
-const form = ref<MenuForm>(createDefaultForm())
-
-const modalTitle = computed(() => (modalMode.value === 'create' ? '新增菜单' : '编辑菜单'))
-const isCreateMode = computed(() => modalMode.value === 'create')
-const isDirectory = computed(() => form.value.type === MenuType.Directory)
-
 const typeOptions = [
   { label: '目录', value: MenuType.Directory },
   { label: '页面', value: MenuType.Route },
 ]
 
-const rules: FormRules = {
-  title: [
-    {
-      required: true,
-      trigger: ['blur', 'input'],
-      message: '请输入菜单名称',
-    },
-  ],
+const rules = {
+  title: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
   code: [
     {
-      trigger: ['blur', 'input'],
-      validator: (_rule, value: string) => {
+      async validator(_rule: unknown, value: string) {
         if (!isCreateMode.value) {
           return Promise.resolve()
         }
         if (!value || !value.trim()) {
-          return Promise.reject('请输入菜单编码')
+          return Promise.reject(new Error('请输入唯一编码'))
         }
         return Promise.resolve()
       },
-    },
-  ],
-  type: [
-    {
-      trigger: ['change'],
-      validator: (_rule, value: MenuType | null | undefined) => {
-        if (value === null || value === undefined) {
-          return Promise.reject('请选择菜单类型')
-        }
-        return Promise.resolve()
-      },
-    },
-  ],
-  routeName: [
-    {
-      trigger: ['blur', 'input'],
-      validator: (_rule, value: string) => {
-        if (isDirectory.value) {
-          return Promise.resolve()
-        }
-        if (!value || !value.trim()) {
-          return Promise.reject('请输入路由名称')
-        }
-        return Promise.resolve()
-      },
-    },
-  ],
-  routePath: [
-    {
-      trigger: ['blur', 'input'],
-      validator: (_rule, value: string) => {
-        if (isDirectory.value) {
-          return Promise.resolve()
-        }
-        if (!value || !value.trim()) {
-          return Promise.reject('请输入路由路径')
-        }
-        if (!value.startsWith('/')) {
-          return Promise.reject('路由路径需以 / 开头')
-        }
-        return Promise.resolve()
-      },
+      trigger: 'blur',
     },
   ],
 }
 
-const columns: DataTableColumns<MenuDto> = [
-  {
-    title: '名称',
-    key: 'title',
-  },
-  {
-    title: '类型',
-    key: 'type',
-    render(row) {
-      const typeLabel = row.type === MenuType.Directory ? '目录' : '页面'
-      const tagType = row.type === MenuType.Directory ? 'default' : 'success'
-      return h(NTag, { type: tagType as 'default' | 'success' }, { default: () => typeLabel })
-    },
-  },
-  {
-    title: '路由路径',
-    key: 'routePath',
-  },
-  {
-    title: '权限编码',
-    key: 'permissionCode',
-    render(row) {
-      return row.permissionCode || '-'
-    },
-  },
-  {
-    title: '排序',
-    key: 'order',
-  },
-  {
-    title: '状态',
-    key: 'isEnabled',
-    render(row) {
-      return h(
-        NTag,
-        { type: row.isEnabled ? 'success' : 'error' },
-        { default: () => (row.isEnabled ? '启用' : '禁用') },
-      )
-    },
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    render(row) {
-      const actions = [] as Array<ReturnType<typeof h>>
+const isCreateMode = computed(() => modalMode.value === 'create')
+const isDirectory = computed(() => form.value.type === MenuType.Directory)
 
-      if (row.type === MenuType.Directory) {
-        actions.push(
-          h(
-            NButton,
-            {
-              size: 'small',
-              tertiary: true,
-              onClick: () => handleAddChild(row),
-            },
-            { default: () => '新增子菜单' },
-          ),
-        )
-      }
+const parentOptions = computed<TreeNode[]>(() => buildParentOptions(menuTree.value, form.value.id))
+const modalTitle = computed(() => (isCreateMode.value ? '新增菜单' : '编辑菜单'))
 
-      actions.push(
-        h(
-          NButton,
-          {
-            size: 'small',
-            type: 'primary',
-            onClick: () => handleEdit(row),
-          },
-          { default: () => '编辑' },
-        ),
-      )
-
-      actions.push(
-        h(
-          NButton,
-          {
-            size: 'small',
-            type: 'error',
-            secondary: true,
-            onClick: () => handleDelete(row),
-          },
-          { default: () => '删除' },
-        ),
-      )
-
-      return h(NSpace, { size: 'small' }, { default: () => actions })
-    },
-  },
+const columns: ColumnsType<MenuDto> = [
+  { title: '名称', dataIndex: 'title', key: 'title' },
+  { title: '类型', key: 'type' },
+  { title: '路由路径', dataIndex: 'routePath', key: 'routePath' },
+  { title: '权限编码', key: 'permissionCode' },
+  { title: '排序', dataIndex: 'order', key: 'order' },
+  { title: '状态', key: 'isEnabled' },
+  { title: '操作', key: 'actions', width: 260 },
 ]
-
-const parentOptions = computed<TreeSelectOption[]>(() =>
-  buildParentOptions(menuTree.value, form.value.id),
-)
 
 watch(error, (err) => {
   if (err) {
@@ -351,51 +264,22 @@ watch(
   },
 )
 
-onMounted(async () => {
-  try {
-    await fetchMenuTree()
-  } catch (err) {
-    console.error('加载菜单失败:', err)
-  }
-})
-
-const rowKey = (row: MenuDto) => row.id
-
 function resetForm() {
-  form.value = { ...createDefaultForm() }
-}
-
-function normalizeNullable(value: string | null | undefined): string | null {
-  if (value === null || value === undefined) {
-    return null
+  form.value = {
+    id: null,
+    code: '',
+    title: '',
+    routePath: '',
+    routeName: '',
+    icon: null,
+    parentId: null,
+    order: 0,
+    isEnabled: true,
+    type: MenuType.Route,
+    permissionCode: '',
+    description: '',
   }
-  const trimmed = value.trim()
-  return trimmed.length ? trimmed : null
-}
-
-function buildParentOptions(menus: MenuDto[], excludeId?: string | null): TreeSelectOption[] {
-  const result: TreeSelectOption[] = []
-  menus.forEach((menu) => {
-    if (menu.id === excludeId) {
-      return
-    }
-
-    const option: TreeSelectOption = {
-      label: menu.title,
-      key: menu.id,
-      disabled: menu.type !== MenuType.Directory,
-    }
-
-    if (menu.children && menu.children.length > 0) {
-      const children = buildParentOptions(menu.children, excludeId)
-      if (children.length) {
-        option.children = children
-      }
-    }
-
-    result.push(option)
-  })
-  return result
+  formRef.value?.clearValidate()
 }
 
 function handleCreateRoot() {
@@ -431,12 +315,11 @@ function handleEdit(menu: MenuDto) {
 }
 
 function handleDelete(menu: MenuDto) {
-  dialog.warning({
+  modal.confirm({
     title: '删除菜单',
     content: `确定删除菜单「${menu.title}」吗？`,
-    positiveText: '删除',
-    negativeText: '取消',
-    onPositiveClick: async () => {
+    okType: 'danger',
+    onOk: async () => {
       try {
         await deleteMenu(menu.id)
         message.success('删除成功')
@@ -457,22 +340,20 @@ async function handleRefresh() {
 }
 
 async function handleSubmit() {
-  if (!formRef.value) return
-
   try {
-    await formRef.value.validate()
+    await formRef.value?.validate()
   } catch {
     return
   }
 
-  saving.value = true
+  submitLoading.value = true
 
   const payloadBase = {
     title: form.value.title.trim(),
     routePath: normalizeNullable(form.value.routePath),
     routeName: normalizeNullable(form.value.routeName),
     icon: normalizeNullable(form.value.icon),
-    parentId: form.value.parentId ? form.value.parentId : null,
+    parentId: form.value.parentId || null,
     order: form.value.order ?? 0,
     isEnabled: form.value.isEnabled,
     type: form.value.type,
@@ -495,13 +376,46 @@ async function handleSubmit() {
       await updateMenu(form.value.id, payload)
       message.success('更新成功')
     }
-
     showModal.value = false
   } catch (err) {
     message.error(err instanceof Error ? err.message : '保存失败')
   } finally {
-    saving.value = false
+    submitLoading.value = false
   }
+}
+
+onMounted(async () => {
+  await fetchMenuTree()
+})
+
+function normalizeNullable(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+  const trimmed = value.trim()
+  return trimmed.length ? trimmed : null
+}
+
+function buildParentOptions(menus: MenuDto[], excludeId?: string | null): TreeNode[] {
+  return menus.reduce<TreeNode[]>((acc, menu) => {
+    if (menu.id === excludeId) {
+      return acc
+    }
+    const node: TreeNode = {
+      title: menu.title,
+      value: menu.id,
+      key: menu.id,
+      disabled: menu.type !== MenuType.Directory,
+    }
+    if (menu.children && menu.children.length > 0) {
+      const children = buildParentOptions(menu.children, excludeId)
+      if (children.length) {
+        node.children = children
+      }
+    }
+    acc.push(node)
+    return acc
+  }, [])
 }
 </script>
 
@@ -510,22 +424,23 @@ async function handleSubmit() {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px;
+  padding: 24px;
 }
 
-.page-header {
+.menu-management__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.table-actions {
-  display: inline-flex;
   gap: 16px;
+}
+
+.menu-management__header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.w-100 {
+  width: 100%;
 }
 </style>

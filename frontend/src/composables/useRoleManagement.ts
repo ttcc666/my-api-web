@@ -1,10 +1,9 @@
 import { ref } from 'vue'
-import { useMessage } from 'naive-ui'
 import { RolesApi } from '@/api'
 import type { RoleDto, CreateRoleDto, UpdateRoleDto } from '@/types/api'
+import { message } from '@/plugins/antd'
 
 export function useRoleManagement() {
-  const message = useMessage()
   const loading = ref(false)
   const roles = ref<RoleDto[]>([])
 

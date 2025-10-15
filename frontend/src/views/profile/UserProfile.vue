@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { UsersApi } from '@/api'
-import { message } from '@/plugins/naive'
+import { message } from '@/plugins/antd'
 import type { ChangePasswordDto, UserUpdateDto } from '@/types/api'
 
 const userStore = useUserStore()
@@ -28,9 +28,10 @@ const passwordForm = ref<PasswordForm>({
   newPassword: '',
   confirmPassword: '',
 })
+
 const passwordLoading = ref(false)
 
-const handleEdit = () => {
+function handleEdit() {
   formData.value = {
     realName: user.value?.realName || '',
     phone: user.value?.phone || '',
@@ -38,17 +39,18 @@ const handleEdit = () => {
   editMode.value = true
 }
 
-const handleCancel = () => {
+function handleCancel() {
   editMode.value = false
 }
 
-const handleSave = async () => {
-  if (!user.value?.id) return
+async function handleSave() {
+  if (!user.value?.id) {
+    return
+  }
 
   loading.value = true
   try {
     const payload: UserUpdateDto = {}
-
     const trimmedRealName = formData.value.realName?.trim()
     const trimmedPhone = formData.value.phone?.trim()
 
@@ -64,15 +66,18 @@ const handleSave = async () => {
     await userStore.fetchUserInfo()
     message.success('更新成功')
     editMode.value = false
-  } catch {
+  } catch (error) {
+    console.error('更新用户信息失败:', error)
     message.error('更新失败')
   } finally {
     loading.value = false
   }
 }
 
-const handlePasswordChange = async () => {
-  if (!user.value?.id) return
+async function handlePasswordChange() {
+  if (!user.value?.id) {
+    return
+  }
 
   if (!passwordForm.value.currentPassword || !passwordForm.value.newPassword) {
     message.error('请输入当前密码和新密码')
@@ -108,8 +113,10 @@ const handlePasswordChange = async () => {
       newPassword: '',
       confirmPassword: '',
     }
-  } catch (error: any) {
-    const errorMessage = error?.response?.data?.message ?? '修改密码失败'
+  } catch (error: unknown) {
+    const errorMessage =
+      (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+      '修改密码失败'
     message.error(errorMessage)
   } finally {
     passwordLoading.value = false
@@ -119,111 +126,120 @@ const handlePasswordChange = async () => {
 
 <template>
   <div class="profile-container">
-    <n-card title="个人中心" :bordered="false">
-      <n-grid :cols="24" :x-gap="24">
-        <n-gi :span="6">
+    <a-card title="个人中心" class="profile-card">
+      <a-row :gutter="[24, 24]">
+        <a-col :xs="24" :lg="6">
           <div class="profile-sidebar">
-            <n-space vertical align="center" :size="16">
-              <n-avatar :size="120" round :style="{ backgroundColor: '#18a058' }">
-                {{ user?.username?.charAt(0).toUpperCase() }}
-              </n-avatar>
-              <n-h2 style="margin: 0">{{ user?.username }}</n-h2>
-              <n-text depth="3">{{ user?.email }}</n-text>
-              <n-tag v-if="user?.isActive" type="success">活跃</n-tag>
-              <n-tag v-else type="error">未激活</n-tag>
-            </n-space>
+            <a-avatar :size="120" class="profile-avatar">
+              {{ user?.username?.charAt(0).toUpperCase() }}
+            </a-avatar>
+            <div class="profile-username">{{ user?.username }}</div>
+            <div class="profile-email">{{ user?.email }}</div>
+            <a-tag v-if="user?.isActive" color="success">活跃</a-tag>
+            <a-tag v-else color="error">未激活</a-tag>
           </div>
-        </n-gi>
-
-        <n-gi :span="18">
-          <n-tabs v-model:value="activeTab" type="line" animated>
-            <n-tab-pane name="info" tab="基本信息">
-              <n-space vertical :size="24">
-                <n-descriptions v-if="!editMode" label-placement="left" :column="1" bordered>
-                  <n-descriptions-item label="用户名">
-                    {{ user?.username }}
-                  </n-descriptions-item>
-                  <n-descriptions-item label="邮箱">
-                    {{ user?.email }}
-                  </n-descriptions-item>
-                  <n-descriptions-item label="真实姓名">
-                    {{ user?.realName || '未设置' }}
-                  </n-descriptions-item>
-                  <n-descriptions-item label="手机号">
-                    {{ user?.phone || '未设置' }}
-                  </n-descriptions-item>
-                  <n-descriptions-item label="注册时间">
-                    {{
-                      user?.createdTime ? new Date(user.createdTime).toLocaleString('zh-CN') : '-'
-                    }}
-                  </n-descriptions-item>
-                  <n-descriptions-item label="最后登录">
-                    {{
-                      user?.lastLoginTime
-                        ? new Date(user.lastLoginTime).toLocaleString('zh-CN')
-                        : '-'
-                    }}
-                  </n-descriptions-item>
-                </n-descriptions>
-
-                <n-form v-else :model="formData" label-placement="left" label-width="100">
-                  <n-form-item label="真实姓名">
-                    <n-input v-model:value="formData.realName" placeholder="请输入真实姓名" />
-                  </n-form-item>
-                  <n-form-item label="手机号">
-                    <n-input v-model:value="formData.phone" placeholder="请输入手机号" />
-                  </n-form-item>
-                </n-form>
-
-                <n-space v-if="!editMode">
-                  <n-button type="primary" @click="handleEdit">编辑资料</n-button>
-                </n-space>
-                <n-space v-else>
-                  <n-button type="primary" :loading="loading" @click="handleSave">保存</n-button>
-                  <n-button @click="handleCancel">取消</n-button>
-                </n-space>
-              </n-space>
-            </n-tab-pane>
-
-            <n-tab-pane name="security" tab="账户安全">
-              <n-card title="修改密码" :bordered="false">
-                <n-form :model="passwordForm" label-placement="left" label-width="100">
-                  <n-form-item label="当前密码">
-                    <n-input
-                      v-model:value="passwordForm.currentPassword"
-                      type="password"
-                      placeholder="请输入当前密码"
-                      show-password-on="click"
-                    />
-                  </n-form-item>
-                  <n-form-item label="新密码">
-                    <n-input
-                      v-model:value="passwordForm.newPassword"
-                      type="password"
-                      placeholder="请输入新密码"
-                      show-password-on="click"
-                    />
-                  </n-form-item>
-                  <n-form-item label="确认密码">
-                    <n-input
-                      v-model:value="passwordForm.confirmPassword"
-                      type="password"
-                      placeholder="请再次输入新密码"
-                      show-password-on="click"
-                    />
-                  </n-form-item>
-                  <n-form-item>
-                    <n-button type="primary" :loading="passwordLoading" @click="handlePasswordChange">
+        </a-col>
+        <a-col :xs="24" :lg="18">
+          <a-tabs v-model:activeKey="activeTab">
+            <a-tab-pane key="info" tab="基本信息">
+              <div class="tab-content">
+                <template v-if="!editMode">
+                  <a-descriptions :column="1" bordered size="middle">
+                    <a-descriptions-item label="用户名">{{ user?.username }}</a-descriptions-item>
+                    <a-descriptions-item label="邮箱">{{ user?.email }}</a-descriptions-item>
+                    <a-descriptions-item label="真实姓名">
+                      {{ user?.realName || '未设置' }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="手机号">
+                      {{ user?.phone || '未设置' }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="注册时间">
+                      {{
+                        user?.createdTime
+                          ? new Date(user.createdTime).toLocaleString('zh-CN')
+                          : '-'
+                      }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="最后登录">
+                      {{
+                        user?.lastLoginTime
+                          ? new Date(user.lastLoginTime).toLocaleString('zh-CN')
+                          : '-'
+                      }}
+                    </a-descriptions-item>
+                  </a-descriptions>
+                  <div class="action-group">
+                    <a-button type="primary" @click="handleEdit">编辑资料</a-button>
+                  </div>
+                </template>
+                <template v-else>
+                  <a-form layout="vertical" :model="formData">
+                    <a-row :gutter="16">
+                      <a-col :xs="24" :md="12">
+                        <a-form-item label="真实姓名">
+                          <a-input v-model:value="formData.realName" placeholder="请输入真实姓名" />
+                        </a-form-item>
+                      </a-col>
+                      <a-col :xs="24" :md="12">
+                        <a-form-item label="手机号">
+                          <a-input v-model:value="formData.phone" placeholder="请输入手机号" />
+                        </a-form-item>
+                      </a-col>
+                    </a-row>
+                  </a-form>
+                  <div class="action-group">
+                    <a-button type="primary" :loading="loading" @click="handleSave">保存</a-button>
+                    <a-button @click="handleCancel">取消</a-button>
+                  </div>
+                </template>
+              </div>
+            </a-tab-pane>
+            <a-tab-pane key="security" tab="账户安全">
+              <div class="tab-content">
+                <div class="password-section">
+                  <h3>修改密码</h3>
+                  <a-form layout="vertical" :model="passwordForm">
+                    <a-row :gutter="16">
+                      <a-col :xs="24" :md="12">
+                        <a-form-item label="当前密码">
+                          <a-input-password
+                            v-model:value="passwordForm.currentPassword"
+                            placeholder="请输入当前密码"
+                          />
+                        </a-form-item>
+                      </a-col>
+                      <a-col :xs="24" :md="12">
+                        <a-form-item label="新密码">
+                          <a-input-password
+                            v-model:value="passwordForm.newPassword"
+                            placeholder="请输入新密码"
+                          />
+                        </a-form-item>
+                      </a-col>
+                      <a-col :xs="24" :md="12">
+                        <a-form-item label="确认密码">
+                          <a-input-password
+                            v-model:value="passwordForm.confirmPassword"
+                            placeholder="请再次输入新密码"
+                          />
+                        </a-form-item>
+                      </a-col>
+                    </a-row>
+                    <a-button
+                      type="primary"
+                      :loading="passwordLoading"
+                      @click="handlePasswordChange"
+                    >
                       修改密码
-                    </n-button>
-                  </n-form-item>
-                </n-form>
-              </n-card>
-            </n-tab-pane>
-          </n-tabs>
-        </n-gi>
-      </n-grid>
-    </n-card>
+                    </a-button>
+                  </a-form>
+                </div>
+              </div>
+            </a-tab-pane>
+          </a-tabs>
+        </a-col>
+      </a-row>
+    </a-card>
   </div>
 </template>
 
@@ -232,8 +248,63 @@ const handlePasswordChange = async () => {
   padding: 24px;
 }
 
+.profile-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 .profile-sidebar {
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
   text-align: center;
+}
+
+.profile-avatar {
+  background: linear-gradient(135deg, #1677ff 0%, #69c0ff 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 600;
+}
+
+.profile-username {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.profile-email {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.action-group {
+  display: flex;
+  gap: 12px;
+}
+
+.password-section h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 16px;
+  }
+
+  .action-group {
+    flex-wrap: wrap;
+  }
 }
 </style>
