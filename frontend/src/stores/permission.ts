@@ -2,6 +2,7 @@ import { ref, computed, readonly } from 'vue'
 import { defineStore } from 'pinia'
 import type { UserPermissionInfoDto } from '@/types/api'
 import { AuthApi } from '@/api'
+import { permissionCache } from '@/utils/cache'
 
 type UserPermissionInfo = UserPermissionInfoDto
 
@@ -12,6 +13,8 @@ export const usePermissionStore = defineStore('permission', () => {
   const permissionsLoaded = ref(false)
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  let loadPromise: Promise<void> | null = null
 
   const hasPermission = computed(() => (permission: string) => {
     return permissions.value.includes(permission)
@@ -43,24 +46,47 @@ export const usePermissionStore = defineStore('permission', () => {
     permissionsLoaded.value = false
   }
 
-  const loadUserPermissions = async () => {
-    if (permissionsLoaded.value) return
+  const loadUserPermissions = async (forceRefresh = false) => {
+    if (permissionsLoaded.value && !forceRefresh) return
 
-    try {
-      loading.value = true
-      const permissionInfo = await AuthApi.getCurrentUserPermissions()
-      if (permissionInfo) {
-        setUserPermissions(permissionInfo)
-        permissionsLoaded.value = true
-      }
-    } catch (err) {
-      console.error('加载用户权限失败:', err)
-      error.value = '加载用户权限失败'
-      permissionsLoaded.value = false
-      throw err
-    } finally {
-      loading.value = false
+    if (loadPromise && !forceRefresh) {
+      return loadPromise
     }
+
+    if (forceRefresh) {
+      permissionCache.remove()
+      permissionsLoaded.value = false
+      loadPromise = null
+    }
+
+    const cached = permissionCache.get() as UserPermissionInfoDto | null
+    if (cached && !forceRefresh) {
+      setUserPermissions(cached)
+      permissionsLoaded.value = true
+      return
+    }
+
+    loadPromise = (async () => {
+      try {
+        loading.value = true
+        const permissionInfo = await AuthApi.getCurrentUserPermissions()
+        if (permissionInfo) {
+          setUserPermissions(permissionInfo)
+          permissionCache.set(permissionInfo)
+          permissionsLoaded.value = true
+        }
+      } catch (err) {
+        console.error('加载用户权限失败:', err)
+        error.value = '加载用户权限失败'
+        permissionsLoaded.value = false
+        throw err
+      } finally {
+        loading.value = false
+        loadPromise = null
+      }
+    })()
+
+    return loadPromise
   }
 
   return {

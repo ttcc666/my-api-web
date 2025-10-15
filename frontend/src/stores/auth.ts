@@ -5,6 +5,7 @@ import { UsersApi } from '@/api'
 import { useUserStore } from './user'
 import { usePermissionStore } from './permission'
 import { useMenuStore } from './menu'
+import { CacheManager } from '@/utils/cache'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('accessToken'))
@@ -33,6 +34,8 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       error.value = null
 
+      CacheManager.clear()
+
       const tokens = await UsersApi.login(loginData)
       setTokens(tokens.accessToken, tokens.refreshToken)
 
@@ -43,7 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
       const userData = await UsersApi.getProfile()
       userStore.setUser(userData)
 
-      await permissionStore.loadUserPermissions()
+      await permissionStore.loadUserPermissions(true)
 
       try {
         await menuStore.refreshMenus()
@@ -98,6 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
     permissionStore.clearUserPermissions()
     menuStore.clearMenus()
 
+    CacheManager.clear()
     localStorage.clear()
   }
 
@@ -123,7 +127,7 @@ export const useAuthStore = defineStore('auth', () => {
       await permissionStore.loadUserPermissions()
 
       try {
-        await menuStore.refreshMenus()
+        await menuStore.loadMenus()
       } catch (err) {
         console.error('初始化菜单失败:', err)
       }

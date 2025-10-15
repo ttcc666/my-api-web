@@ -3,6 +3,11 @@
     <n-layout-header bordered class="header">
       <div class="logo">My App</div>
       <div class="user-info">
+        <n-button quaternary circle :loading="refreshing" @click="handleRefresh">
+          <template #icon>
+            <n-icon><refresh-outline /></n-icon>
+          </template>
+        </n-button>
         <span>欢迎，{{ userStore.username || '用户' }}</span>
         <n-button text @click="handleLogout">退出登录</n-button>
       </div>
@@ -45,21 +50,27 @@
 
 <script setup lang="ts">
 import { h, ref, computed, watch, onMounted, type Component } from 'vue'
-import { NIcon, type MenuOption } from 'naive-ui'
+import { NIcon, type MenuOption, useMessage } from 'naive-ui'
+import { RefreshOutline } from '@vicons/ionicons5'
 import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
+import { usePermissionStore } from '@/stores/permission'
 import { useTabStore } from '@/stores/tabs'
 import type { MenuDto } from '@/types/api'
 import { getIconComponent } from '@/utils/iconRegistry'
 import AppBreadcrumb from '@/components/navigation/AppBreadcrumb.vue'
 import AppMenuTabs from '@/components/navigation/AppMenuTabs.vue'
 
+const message = useMessage()
+
 const collapsed = ref(false)
+const refreshing = ref(false)
 const authStore = useAuthStore()
 const userStore = useUserStore()
 const menuStore = useMenuStore()
+const permissionStore = usePermissionStore()
 const router = useRouter()
 const route = useRoute()
 const tabStore = useTabStore()
@@ -165,6 +176,19 @@ onMounted(async () => {
     console.error('加载菜单失败:', error)
   }
 })
+
+const handleRefresh = async () => {
+  refreshing.value = true
+  try {
+    await Promise.all([permissionStore.loadUserPermissions(true), menuStore.refreshMenus()])
+    message.success('刷新成功')
+  } catch (error) {
+    message.error('刷新失败')
+    console.error('刷新失败:', error)
+  } finally {
+    refreshing.value = false
+  }
+}
 
 const handleLogout = () => {
   authStore.logout()

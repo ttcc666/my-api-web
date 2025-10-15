@@ -100,6 +100,33 @@ export const storageConfig = {
 } as const
 
 /**
+ * 缓存配置
+ */
+export const cacheConfig = {
+  /**
+   * 权限缓存过期时间（毫秒）
+   * 默认 30 分钟
+   */
+  permissionCacheExpiry: 30 * 60 * 1000,
+
+  /**
+   * 菜单缓存过期时间（毫秒）
+   * 默认 30 分钟
+   */
+  menuCacheExpiry: 30 * 60 * 1000,
+
+  /**
+   * 权限缓存 Key
+   */
+  permissionCacheKey: 'user_permissions',
+
+  /**
+   * 菜单缓存 Key
+   */
+  menuCacheKey: 'user_menus',
+} as const
+
+/**
  * 路由配置
  */
 export const routeConfig = {
@@ -217,4 +244,5 @@ export default {
   pagination: paginationConfig,
   ui: uiConfig,
   monitor: monitorConfig,
+  cache: cacheConfig,
 }

@@ -48,7 +48,7 @@ import {
   type FormInst,
   type FormRules,
 } from 'naive-ui'
-import { RolesApi, PermissionsApi } from '@/api'
+import { RolesApi } from '@/api'
 import type { RoleDto, PermissionDto, CreateRoleDto, UpdateRoleDto } from '@/types/api'
 
 // 类型别名以保持兼容性
@@ -148,16 +148,6 @@ async function fetchRoles() {
   }
 }
 
-async function fetchPermissions() {
-  try {
-    const permissionList = await PermissionsApi.getAllPermissions()
-    permissions.value = Array.isArray(permissionList) ? permissionList : []
-  } catch (error) {
-    console.error('获取权限列表失败:', error)
-    message.error('获取权限列表失败')
-  }
-}
-
 function handleCreate() {
   isEdit.value = false
   currentRole.value = defaultRole()
@@ -221,7 +211,6 @@ async function handleSubmit() {
 
 onMounted(() => {
   fetchRoles()
-  fetchPermissions()
 })
 </script>
 

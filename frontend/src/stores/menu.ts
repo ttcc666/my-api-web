@@ -2,6 +2,7 @@ import { ref, readonly, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { AuthApi } from '@/api'
 import type { MenuDto } from '@/types/api'
+import { menuCache } from '@/utils/cache'
 
 export const useMenuStore = defineStore('menu', () => {
   const menus = ref<MenuDto[]>([])
@@ -11,13 +12,25 @@ export const useMenuStore = defineStore('menu', () => {
 
   let loadPromise: Promise<void> | null = null
 
-  const fetchMenus = async () => {
+  const fetchMenus = async (forceRefresh = false) => {
+    if (forceRefresh) {
+      menuCache.remove()
+    }
+
+    const cached = menuCache.get() as MenuDto[] | null
+    if (cached && !forceRefresh) {
+      menus.value = cached
+      loaded.value = true
+      return
+    }
+
     loading.value = true
     error.value = null
 
     try {
       const data = await AuthApi.getCurrentUserMenus()
       menus.value = Array.isArray(data) ? data : []
+      menuCache.set(menus.value)
       loaded.value = true
     } catch (err) {
       error.value = (err instanceof Error ? err.message : String(err)) || '加载菜单失败'
@@ -39,7 +52,7 @@ export const useMenuStore = defineStore('menu', () => {
 
     loadPromise = (async () => {
       try {
-        await fetchMenus()
+        await fetchMenus(false)
       } finally {
         loadPromise = null
       }
@@ -56,7 +69,8 @@ export const useMenuStore = defineStore('menu', () => {
 
   const refreshMenus = async () => {
     loaded.value = false
-    await loadMenus()
+    loadPromise = null
+    await fetchMenus(true)
   }
 
   const clearMenus = () => {
