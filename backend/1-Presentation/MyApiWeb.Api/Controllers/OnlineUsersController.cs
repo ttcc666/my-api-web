@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using MyApiWeb.Models.DTOs;
-using MyApiWeb.Services.Interfaces;
+using MyApiWeb.Services.Interfaces.Hub;
 
 namespace MyApiWeb.Api.Controllers
 {

@@ -1,6 +1,13 @@
 <template>
-  <a-tabs type="editable-card" size="small" hideAdd :activeKey="activeKey" @change="handleChange" @edit="handleEdit"
-    class="app-menu-tabs">
+  <a-tabs
+    type="editable-card"
+    size="small"
+    hideAdd
+    :activeKey="activeKey"
+    @change="handleChange"
+    @edit="handleEdit"
+    class="app-menu-tabs"
+  >
     <a-tab-pane v-for="tab in tabs" :key="tab.key" :closable="tab.closable">
       <template #tab>
         <a-dropdown :trigger="['contextmenu']">
@@ -21,8 +28,8 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import { useTabStore } from '@/stores/tabs'
-import { useThemeStore } from '@/stores/theme'
+import { useTabStore } from '@/stores/modules/common/tabs'
+import { useThemeStore } from '@/stores/modules/common/theme'
 
 const router = useRouter()
 const tabStore = useTabStore()
@@ -70,7 +77,7 @@ async function handleContextMenuClick(tabKey: string, actionKey: string | number
       tabStore.closeAll()
       break
   }
-  const target = tabs.value.find(tab => tab.key === activeKey.value)
+  const target = tabs.value.find((tab) => tab.key === activeKey.value)
   if (target) {
     await navigateTo(target.path)
   }

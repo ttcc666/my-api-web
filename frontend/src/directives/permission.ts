@@ -1,5 +1,5 @@
 import type { App, Directive, DirectiveBinding } from 'vue'
-import { usePermissionStore } from '@/stores/permission'
+import { usePermissionStore } from '@/stores/modules/system/permission'
 
 function checkPermission(el: HTMLElement, binding: DirectiveBinding<string | string[]>) {
   const permissionStore = usePermissionStore()

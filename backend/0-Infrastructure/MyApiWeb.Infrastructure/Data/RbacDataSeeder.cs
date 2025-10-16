@@ -1,6 +1,9 @@
 using Microsoft.Extensions.Logging;
 using MyApiWeb.Infrastructure.Data.SeedConfigurations;
-using MyApiWeb.Models.Entities;
+using MyApiWeb.Models.Entities.Common;
+using MyApiWeb.Models.Entities.System;
+using MyApiWeb.Models.Entities.Auth;
+using MyApiWeb.Models.Entities.Hub;
 using MyApiWeb.Repository;
 using SqlSugar;
 

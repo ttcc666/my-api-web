@@ -2,9 +2,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MyApiWeb.Models.Entities;
+using MyApiWeb.Models.Entities.Common;
+using MyApiWeb.Models.Entities.System;
+using MyApiWeb.Models.Entities.Auth;
+using MyApiWeb.Models.Entities.Hub;
 using MyApiWeb.Repository;
-using MyApiWeb.Services.Interfaces;
+using MyApiWeb.Services.Interfaces.System;
 
 namespace MyApiWeb.Infrastructure.Data
 {

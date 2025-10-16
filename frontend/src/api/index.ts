@@ -11,14 +11,14 @@
  * - OnlineUsersApi: 在线用户管理
  */
 
-export { AuthApi, default as AuthApiDefault } from './auth'
-export { UsersApi, default as UsersApiDefault } from './users'
-export { TokenApi, default as TokenApiDefault } from './token'
-export { RolesApi, default as RolesApiDefault } from './roles'
-export { PermissionsApi, default as PermissionsApiDefault } from './permissions'
-export { MenusApi, default as MenusApiDefault } from './menus'
-export { DeviceApi, default as DeviceApiDefault } from './device'
-export { OnlineUsersApi, default as OnlineUsersApiDefault } from './onlineUsers'
+export { AuthApi, default as AuthApiDefault } from './modules/auth/auth'
+export { UsersApi, default as UsersApiDefault } from './modules/system/users'
+export { TokenApi, default as TokenApiDefault } from './modules/auth/token'
+export { RolesApi, default as RolesApiDefault } from './modules/system/roles'
+export { PermissionsApi, default as PermissionsApiDefault } from './modules/system/permissions'
+export { MenusApi, default as MenusApiDefault } from './modules/system/menus'
+export { DeviceApi, default as DeviceApiDefault } from './modules/system/device'
+export { OnlineUsersApi, default as OnlineUsersApiDefault } from './modules/hub/onlineUsers'
 
 // 重新导出类型
 export type * from '@/types/api'

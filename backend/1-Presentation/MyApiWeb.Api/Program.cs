@@ -2,7 +2,7 @@ using Autofac;
 using MyApiWeb.Api.Controllers;
 using MyApiWeb.Infrastructure.Configuration;
 using MyApiWeb.Infrastructure.Data;
-using MyApiWeb.Services.Interfaces;
+using MyApiWeb.Services.Interfaces.Hub;
 using Serilog;
 
 try

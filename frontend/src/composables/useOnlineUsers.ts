@@ -1,19 +1,12 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useOnlineUserStore } from '@/stores/onlineUser'
+import { useOnlineUserStore } from '@/stores/modules/hub/onlineUser'
 import type { OnlineUserQueryParams, OnlineUserStatus } from '@/types/api'
 
 export function useOnlineUsers() {
   const onlineUserStore = useOnlineUserStore()
-  const {
-    onlineUsers,
-    statistics,
-    loading,
-    statisticsLoading,
-    error,
-    isConnected,
-    connectionId,
-  } = storeToRefs(onlineUserStore)
+  const { onlineUsers, statistics, loading, statisticsLoading, error, isConnected, connectionId } =
+    storeToRefs(onlineUserStore)
 
   // 查询参数
   const queryParams = ref<OnlineUserQueryParams>({
@@ -129,10 +122,7 @@ export function useOnlineUsers() {
   }
 
   // 强制下线
-  const handleForceDisconnect = async (
-    connectionId: string,
-    reason?: string,
-  ): Promise<void> => {
+  const handleForceDisconnect = async (connectionId: string, reason?: string): Promise<void> => {
     await onlineUserStore.forceDisconnect(connectionId, reason)
   }
 

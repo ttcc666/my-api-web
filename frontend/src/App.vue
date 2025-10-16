@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { useThemeStore } from '@/stores/theme'
+import { useThemeStore } from '@/stores/modules/common/theme'
 
 const themeStore = useThemeStore()
 </script>

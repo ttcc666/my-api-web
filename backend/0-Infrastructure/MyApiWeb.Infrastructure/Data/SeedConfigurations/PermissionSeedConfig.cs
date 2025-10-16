@@ -1,4 +1,4 @@
-using MyApiWeb.Models.Entities;
+using MyApiWeb.Models.Entities.System;
 
 namespace MyApiWeb.Infrastructure.Data.SeedConfigurations
 {

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MyApiWeb.Services.Interfaces;
+using MyApiWeb.Services.Interfaces.Hub;
 using Quartz;
 
 namespace MyApiWeb.Infrastructure.Jobs

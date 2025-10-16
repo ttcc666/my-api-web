@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MyApiWeb.Models.DTOs;
-using MyApiWeb.Models.Entities;
-using MyApiWeb.Services.Interfaces;
+using MyApiWeb.Models.Entities.System;
+using MyApiWeb.Services.Interfaces.System;
 
 namespace MyApiWeb.Api.Controllers
 {

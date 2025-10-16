@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MyApiWeb.Services.Interfaces;
+using MyApiWeb.Services.Interfaces.System;
 
 namespace MyApiWeb.Api.Controllers
 {

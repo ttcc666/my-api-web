@@ -19,7 +19,7 @@
 import { computed, h } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { HomeOutlined } from '@ant-design/icons-vue'
-import { useThemeStore } from '@/stores/theme'
+import { useThemeStore } from '@/stores/modules/common/theme'
 
 interface BreadcrumbItem {
   key: string

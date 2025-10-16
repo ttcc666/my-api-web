@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { usePermissionStore } from '@/stores/permission'
-import { useMenuStore } from '@/stores/menu'
+import { useAuthStore } from '@/stores/modules/auth/auth'
+import { usePermissionStore } from '@/stores/modules/system/permission'
+import { useMenuStore } from '@/stores/modules/system/menu'
 import { MenuType, type MenuDto } from '@/types/api'
 
 const APP_LAYOUT_ROUTE_NAME = 'app-layout'
@@ -10,12 +10,12 @@ const constantRoutes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('@/views/Login.vue'),
+    component: () => import('@/views/auth/Login.vue'),
   },
   {
     path: '/register',
     name: 'register',
-    component: () => import('@/views/Register.vue'),
+    component: () => import('@/views/auth/Register.vue'),
   },
   {
     path: '/',
@@ -28,7 +28,7 @@ const constantRoutes: RouteRecordRaw[] = [
       {
         path: 'profile',
         name: 'user-profile',
-        component: () => import('@/views/profile/UserProfile.vue'),
+        component: () => import('@/views/common/UserProfile.vue'),
         meta: {
           title: '个人中心',
         },
@@ -38,12 +38,12 @@ const constantRoutes: RouteRecordRaw[] = [
   {
     path: '/403',
     name: 'forbidden',
-    component: () => import('@/views/ForbiddenView.vue'),
+    component: () => import('@/views/common/ForbiddenView.vue'),
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    component: () => import('@/views/NotFoundView.vue'),
+    component: () => import('@/views/common/NotFoundView.vue'),
   },
 ]
 

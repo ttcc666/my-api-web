@@ -2,7 +2,7 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { storeToRefs } from 'pinia'
 import type { ApiResponse, TokenPayload } from '@/types/api'
 import apiClient from '@/utils/request'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/modules/auth/auth'
 import { handleError, ApiError, ErrorType, type ErrorInfo } from '@/utils/errorHandler'
 import { apiConfig } from '@/config'
 

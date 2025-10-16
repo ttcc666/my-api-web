@@ -1,5 +1,6 @@
 import { ref, readonly } from 'vue'
-import { DeviceApi, type DeviceInfoDto } from '@/api/device'
+import { DeviceApi } from '@/api'
+import type { DeviceInfoDto } from '@/api/modules/system/device'
 
 // 历史数据点接口
 interface HistoryDataPoint {

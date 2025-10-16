@@ -1,4 +1,4 @@
-using MyApiWeb.Models.Entities;
+using MyApiWeb.Models.Entities.System;
 using System.ComponentModel.DataAnnotations;
 
 namespace MyApiWeb.Models.DTOs

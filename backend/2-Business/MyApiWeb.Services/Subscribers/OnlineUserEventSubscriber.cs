@@ -1,7 +1,7 @@
 using DotNetCore.CAP;
 using Microsoft.Extensions.Logging;
 using MyApiWeb.Models.Events;
-using MyApiWeb.Services.Interfaces;
+using MyApiWeb.Services.Interfaces.Hub;
 
 namespace MyApiWeb.Services.Subscribers
 {

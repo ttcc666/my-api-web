@@ -1,7 +1,12 @@
 using Autofac;
 using MyApiWeb.Models.Interfaces;
-using MyApiWeb.Services.Implements;
-using MyApiWeb.Services.Interfaces;
+using MyApiWeb.Services.Implements.Common;
+using MyApiWeb.Services.Implements.System;
+using MyApiWeb.Services.Implements.Auth;
+using MyApiWeb.Services.Implements.Hub;
+using MyApiWeb.Services.Interfaces.System;
+using MyApiWeb.Services.Interfaces.Auth;
+using MyApiWeb.Services.Interfaces.Hub;
 
 namespace MyApiWeb.Services.Modules
 {

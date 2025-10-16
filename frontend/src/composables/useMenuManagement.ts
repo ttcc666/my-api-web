@@ -1,7 +1,7 @@
 import { ref, readonly, computed } from 'vue'
 import { MenusApi } from '@/api'
 import type { MenuDto, CreateMenuDto, UpdateMenuDto } from '@/types/api'
-import { useMenuStore } from '@/stores/menu'
+import { useMenuStore } from '@/stores/modules/system/menu'
 
 export function useMenuManagement() {
   const menuTree = ref<MenuDto[]>([])
