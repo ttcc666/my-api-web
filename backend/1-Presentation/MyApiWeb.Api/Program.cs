@@ -1,4 +1,5 @@
 using Autofac;
+using MyApiWeb.Api.Controllers;
 using MyApiWeb.Infrastructure.Configuration;
 using MyApiWeb.Infrastructure.Data;
 using Serilog;
@@ -51,11 +52,16 @@ try
                        .InstancePerLifetimeScope();
     });
 
-    // 添加服务到容器
     builder.Services.AddCustomControllers();
+
     builder.Services.AddCustomCors(builder.Configuration, builder.Environment);
+
     builder.Services.AddJwtAuthentication(builder.Configuration);
+
+    builder.Services.AddSignalRWithJwtSupport(builder.Configuration);
+
     builder.Services.AddSwaggerDocumentation();
+
     builder.Services.AddCapMessageBus(builder.Configuration);
 
     var app = builder.Build();
@@ -63,12 +69,14 @@ try
     // 配置中间件管道
     app.UseCustomMiddlewarePipeline();
 
+    // 映射 SignalR Hub 端点
+    app.MapHub<ChatHub>("/hubs/chat");
+
     // 初始化数据种子
     DataSeeder.Seed(app);
 
     Log.Information("应用程序启动完成");
     app.Run();
-
 }
 catch (Exception ex)
 {

@@ -1,7 +1,6 @@
-using System;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using MyApiWeb.Models.Interfaces;
+using System.Security.Claims;
 
 namespace MyApiWeb.Services.Implements
 {

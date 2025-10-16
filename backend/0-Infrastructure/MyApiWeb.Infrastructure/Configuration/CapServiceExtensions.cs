@@ -1,8 +1,8 @@
 using DotNetCore.CAP;
-using Savorboard.CAP.InMemoryMessageQueue;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Savorboard.CAP.InMemoryMessageQueue;
 
 namespace MyApiWeb.Infrastructure.Configuration;
 
@@ -27,7 +27,7 @@ public static class CapServiceExtensions
             options.FailedRetryCount = configuration.GetValue<int>("CAP:FailedRetryCount", 3);
             options.FailedRetryInterval = configuration.GetValue<int>("CAP:FailedRetryInterval", 60);
             options.ConsumerThreadCount = configuration.GetValue<int>("CAP:ConsumerThreadCount", 1);
-            
+
             // 配置 Dashboard
             options.UseDashboard();
 
@@ -110,7 +110,7 @@ public static class CapServiceExtensions
             case "inmemory":
                 options.UseInMemoryMessageQueue();
                 break;
-                
+
             case "rabbitmq":
                 options.UseRabbitMQ(rabbitOptions =>
                 {
@@ -134,7 +134,7 @@ public static class CapServiceExtensions
             case "azureservicebus":
                 options.UseAzureServiceBus(asbOptions =>
                 {
-                    asbOptions.ConnectionString = configuration["CAP:Transport:ConnectionString"] 
+                    asbOptions.ConnectionString = configuration["CAP:Transport:ConnectionString"]
                         ?? throw new ArgumentException("Azure Service Bus连接字符串未配置");
                     asbOptions.TopicPath = configuration["CAP:Transport:TopicPath"] ?? "cap";
                 });

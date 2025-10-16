@@ -1,7 +1,7 @@
 using Autofac;
 using MyApiWeb.Models.Interfaces;
-using MyApiWeb.Services.Interfaces;
 using MyApiWeb.Services.Implements;
+using MyApiWeb.Services.Interfaces;
 
 namespace MyApiWeb.Services.Modules
 {
@@ -42,8 +42,8 @@ namespace MyApiWeb.Services.Modules
                    .As<IDeviceService>()
                    .InstancePerLifetimeScope();
 
-             // 这里可以注册其他服务
-             // 例如：builder.RegisterType<ProductService>().As<IProductService>();
+            // 这里可以注册其他服务
+            // 例如：builder.RegisterType<ProductService>().As<IProductService>();
         }
     }
 }

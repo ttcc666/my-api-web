@@ -1,5 +1,3 @@
-using System;
-
 namespace MyApiWeb.Models.Exceptions
 {
     /// <summary>

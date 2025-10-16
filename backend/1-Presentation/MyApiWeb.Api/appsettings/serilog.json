@@ -10,9 +10,9 @@
 
       // 针对特定命名空间的日志级别覆盖
       "Override": {
-        "Microsoft": "Warning",                     // Microsoft 框架日志仅记录警告及以上
+        "Microsoft": "Warning", // Microsoft 框架日志仅记录警告及以上
         "Microsoft.Hosting.Lifetime": "Information", // 应用启动/关闭信息保留
-        "System": "Warning"                         // System 命名空间日志仅记录警告及以上
+        "System": "Warning" // System 命名空间日志仅记录警告及以上
       }
     },
 
@@ -56,11 +56,11 @@
 
     // 日志上下文增强器 (自动附加额外信息)
     "Enrich": [
-      "FromLogContext",         // 从日志上下文中提取属性
-      "WithEnvironmentName",    // 附加环境名称 (Development/Staging/Production)
-      "WithMachineName",        // 附加机器名称 (多服务器部署时有用)
-      "WithProcessId",          // 附加进程 ID
-      "WithThreadId"            // 附加线程 ID (诊断并发问题)
+      "FromLogContext", // 从日志上下文中提取属性
+      "WithEnvironmentName", // 附加环境名称 (Development/Staging/Production)
+      "WithMachineName", // 附加机器名称 (多服务器部署时有用)
+      "WithProcessId", // 附加进程 ID
+      "WithThreadId" // 附加线程 ID (诊断并发问题)
     ]
   }
 }

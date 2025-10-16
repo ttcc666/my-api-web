@@ -34,7 +34,7 @@ namespace MyApiWeb.Services.Implements
         public async Task<List<PermissionGroupDto>> GetPermissionsByGroupAsync()
         {
             var permissions = await GetAllPermissionsAsync();
-            
+
             var groups = permissions
                 .GroupBy(p => p.Group ?? "其他")
                 .Select(g => new PermissionGroupDto

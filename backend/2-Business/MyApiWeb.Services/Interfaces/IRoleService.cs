@@ -1,5 +1,4 @@
 using MyApiWeb.Models.DTOs;
-using MyApiWeb.Models.Entities;
 
 namespace MyApiWeb.Services.Interfaces
 {

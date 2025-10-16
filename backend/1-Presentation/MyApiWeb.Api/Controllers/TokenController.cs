@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyApiWeb.Infrastructure.Helpers;
 using MyApiWeb.Models.DTOs;
 using MyApiWeb.Services.Interfaces;
-using System.Threading.Tasks;
 
 namespace MyApiWeb.Api.Controllers
 {

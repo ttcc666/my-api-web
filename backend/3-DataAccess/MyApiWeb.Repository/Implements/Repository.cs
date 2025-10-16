@@ -1,6 +1,6 @@
-using System.Linq.Expressions;
-using SqlSugar;
 using MyApiWeb.Repository.Interfaces;
+using SqlSugar;
+using System.Linq.Expressions;
 
 namespace MyApiWeb.Repository.Implements
 {

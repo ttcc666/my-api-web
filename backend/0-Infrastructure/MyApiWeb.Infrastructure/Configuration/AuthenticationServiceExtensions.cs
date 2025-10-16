@@ -1,11 +1,11 @@
-using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using MyApiWeb.Models.DTOs;
+using System.Text;
+using System.Text.Json;
 
 namespace MyApiWeb.Infrastructure.Configuration
 {
@@ -67,6 +67,20 @@ namespace MyApiWeb.Infrastructure.Configuration
                             context.Response.Headers["Token-Expired"] = "true";
                         }
 
+                        // 对 SignalR 握手/实时连接请求不自定义响应，让框架返回标准 401 以保证连接协商正常
+                        var path = context.HttpContext.Request.Path.Value ?? string.Empty;
+                        var hubBasePath = configuration["SignalR:HubPathBase"] ?? "/hubs";
+                        var isSignalR = path.StartsWith(hubBasePath, System.StringComparison.OrdinalIgnoreCase)
+                                        || path.Contains("/negotiate", System.StringComparison.OrdinalIgnoreCase)
+                                        || context.HttpContext.WebSockets.IsWebSocketRequest
+                                        || context.Request.Headers["Accept"].ToString().Contains("text/event-stream", System.StringComparison.OrdinalIgnoreCase);
+
+                        if (isSignalR)
+                        {
+                            // 不处理响应，保持默认的 401
+                            return Task.CompletedTask;
+                        }
+
                         context.HandleResponse();
                         context.Response.StatusCode = StatusCodes.Status200OK;
                         context.Response.ContentType = "application/json";
@@ -83,6 +97,20 @@ namespace MyApiWeb.Infrastructure.Configuration
                     {
                         if (context.Response.HasStarted)
                         {
+                            return Task.CompletedTask;
+                        }
+
+                        // 对 SignalR 握手/实时连接请求不自定义响应，让框架返回标准 403 以保证连接协商正常
+                        var path = context.HttpContext.Request.Path.Value ?? string.Empty;
+                        var hubBasePath = configuration["SignalR:HubPathBase"] ?? "/hubs";
+                        var isSignalR = path.StartsWith(hubBasePath, System.StringComparison.OrdinalIgnoreCase)
+                                        || path.Contains("/negotiate", System.StringComparison.OrdinalIgnoreCase)
+                                        || context.HttpContext.WebSockets.IsWebSocketRequest
+                                        || context.Request.Headers["Accept"].ToString().Contains("text/event-stream", System.StringComparison.OrdinalIgnoreCase);
+
+                        if (isSignalR)
+                        {
+                            // 不处理响应，保持默认的 403
                             return Task.CompletedTask;
                         }
 

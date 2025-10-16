@@ -1,6 +1,6 @@
 using Autofac;
-using MyApiWeb.Repository.Interfaces;
 using MyApiWeb.Repository.Implements;
+using MyApiWeb.Repository.Interfaces;
 
 namespace MyApiWeb.Repository.Modules
 {

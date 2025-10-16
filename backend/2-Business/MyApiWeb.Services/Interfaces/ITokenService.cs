@@ -1,6 +1,5 @@
 using MyApiWeb.Models.DTOs;
 using MyApiWeb.Models.Entities;
-using System.Threading.Tasks;
 
 namespace MyApiWeb.Services.Interfaces
 {

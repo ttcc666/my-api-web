@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using MyApiWeb.Models.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace MyApiWeb.Models.DTOs
 {

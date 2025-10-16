@@ -1,9 +1,5 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using MyApiWeb.Models.DTOs;
 using MyApiWeb.Models.Entities;
 using MyApiWeb.Repository.Interfaces;
@@ -222,7 +218,6 @@ namespace MyApiWeb.Services.Implements
         {
             return BCrypt.Net.BCrypt.HashPassword(password);
         }
-
 
         private static UserDto MapToUserDto(User user)
         {

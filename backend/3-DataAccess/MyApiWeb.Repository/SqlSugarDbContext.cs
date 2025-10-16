@@ -1,8 +1,8 @@
-using SqlSugar;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MyApiWeb.Models.Entities;
 using MyApiWeb.Models.Interfaces;
+using SqlSugar;
 
 namespace MyApiWeb.Repository
 {
@@ -22,14 +22,14 @@ namespace MyApiWeb.Repository
             _configuration = configuration;
             _logger = logger;
             _currentUser = currentUser;
-            
+
             InitializeDatabase();
         }
 
         private void InitializeDatabase()
         {
             var connectionString = _configuration.GetConnectionString("DefaultConnection");
-            
+
             Db = new SqlSugarScope(new ConnectionConfig()
             {
                 DbType = DbType.SqlServer,
@@ -87,7 +87,7 @@ namespace MyApiWeb.Repository
             {
                 // 创建数据库（如果不存在）
                 CreateDatabase();
-                
+
                 // 创建表（如果不存在）
                 CreateTables();
             }

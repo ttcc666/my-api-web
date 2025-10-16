@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyApiWeb.Models.DTOs;
 using MyApiWeb.Models.Entities;

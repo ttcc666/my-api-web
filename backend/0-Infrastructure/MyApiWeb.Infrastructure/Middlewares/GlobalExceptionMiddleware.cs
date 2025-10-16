@@ -1,8 +1,8 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MyApiWeb.Models.DTOs;
 using MyApiWeb.Models.Exceptions;
+using System.Text.Json;
 
 namespace MyApiWeb.Infrastructure.Middlewares
 {

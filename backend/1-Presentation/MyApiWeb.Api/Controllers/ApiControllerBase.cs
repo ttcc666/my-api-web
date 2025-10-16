@@ -1,11 +1,8 @@
-using System.Linq;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using MyApiWeb.Infrastructure.Helpers;
-using MyApiWeb.Services.Interfaces;
+using System.Security.Claims;
 
 namespace MyApiWeb.Api.Controllers
 {

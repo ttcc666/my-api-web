@@ -37,7 +37,7 @@ export const useUserStore = defineStore(
     }
 
     return {
-      user: readonly(user),
+      user,
       loading: readonly(loading),
       error: readonly(error),
       username,
