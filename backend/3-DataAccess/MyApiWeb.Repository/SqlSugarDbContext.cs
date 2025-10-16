@@ -127,6 +127,9 @@ namespace MyApiWeb.Repository
                     typeof(Menu)
                 );
 
+                // 创建在线用户表
+                Db.CodeFirst.InitTables(typeof(OnlineUser));
+
                 _logger.LogInformation("数据库表创建成功");
             }
             catch (Exception ex)

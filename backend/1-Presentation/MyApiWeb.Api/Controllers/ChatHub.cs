@@ -1,5 +1,8 @@
+using DotNetCore.CAP;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using MyApiWeb.Models.Events;
+using MyApiWeb.Repository;
 
 namespace MyApiWeb.Api.Controllers
 {
@@ -7,10 +10,17 @@ namespace MyApiWeb.Api.Controllers
     public class ChatHub : Hub
     {
         private readonly ILogger<ChatHub> _logger;
+        private readonly ICapPublisher _capPublisher;
+        private readonly SqlSugarDbContext _dbContext;
 
-        public ChatHub(ILogger<ChatHub> logger)
+        public ChatHub(
+            ILogger<ChatHub> logger,
+            ICapPublisher capPublisher,
+            SqlSugarDbContext dbContext)
         {
             _logger = logger;
+            _capPublisher = capPublisher;
+            _dbContext = dbContext;
         }
 
         public override async Task OnConnectedAsync()
@@ -24,12 +34,33 @@ namespace MyApiWeb.Api.Controllers
 
             await Groups.AddToGroupAsync(Context.ConnectionId, $"user:{userId}");
 
-            var room = Context.GetHttpContext()?.Request.Query["room"].ToString();
+            var httpContext = Context.GetHttpContext();
+            var room = httpContext?.Request.Query["room"].ToString();
             if (!string.IsNullOrWhiteSpace(room))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, $"room:{room}");
                 _logger.LogInformation("User {UserId} joined room {Room}", userId, room);
             }
+
+            // 获取客户端信息
+            var ipAddress = httpContext?.Connection.RemoteIpAddress?.ToString();
+            var userAgent = httpContext?.Request.Headers["User-Agent"].ToString();
+
+            // 获取用户名
+            var username = Context.User?.Identity?.Name;
+
+            // 发布用户上线事件
+            await _capPublisher.PublishAsync("user.connection.event", new UserConnectionEvent
+            {
+                EventType = ConnectionEventType.Connected,
+                ConnectionId = Context.ConnectionId,
+                UserId = userId,
+                Username = username,
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                Room = room,
+                Timestamp = DateTimeOffset.Now
+            });
 
             _logger.LogInformation("User {UserId} connected with connectionId {ConnectionId}", userId, Context.ConnectionId);
             await base.OnConnectedAsync();
@@ -43,6 +74,16 @@ namespace MyApiWeb.Api.Controllers
             if (!string.IsNullOrWhiteSpace(userId))
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user:{userId}");
+
+                // 发布用户下线事件
+                await _capPublisher.PublishAsync("user.connection.event", new UserConnectionEvent
+                {
+                    EventType = ConnectionEventType.Disconnected,
+                    ConnectionId = Context.ConnectionId,
+                    UserId = userId,
+                    Timestamp = DateTimeOffset.Now,
+                    DisconnectReason = exception?.Message
+                });
             }
 
             await base.OnDisconnectedAsync(exception);
@@ -133,6 +174,35 @@ namespace MyApiWeb.Api.Controllers
                 connectionId = Context.ConnectionId,
                 serverTime = DateTimeOffset.UtcNow
             });
+        }
+
+        /// <summary>
+        /// 心跳方法,用于保持连接活跃状态
+        /// 客户端应定期调用此方法 (建议每 1-3 分钟)
+        /// </summary>
+        public async Task<object> Heartbeat()
+        {
+            var userId = Context.UserIdentifier;
+
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                // 发布心跳事件
+                await _capPublisher.PublishAsync("user.connection.event", new UserConnectionEvent
+                {
+                    EventType = ConnectionEventType.Heartbeat,
+                    ConnectionId = Context.ConnectionId,
+                    UserId = userId,
+                    Timestamp = DateTimeOffset.Now
+                });
+            }
+
+            return new
+            {
+                ok = true,
+                userId,
+                connectionId = Context.ConnectionId,
+                serverTime = DateTimeOffset.UtcNow
+            };
         }
     }
 }

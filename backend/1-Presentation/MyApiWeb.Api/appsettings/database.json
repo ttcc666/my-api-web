@@ -20,7 +20,7 @@
   "DatabaseSettings": {
     // 是否启用自动迁移 (自动创建数据库和表结构)
     // 开发环境: true  | 生产环境: false (手动执行迁移)
-    "EnableMigrations": false,
+    "EnableMigrations": true,
 
     // 是否在应用启动时执行数据种子 (插入初始数据)
     // 开发环境: true  | 生产环境: false (避免重复插入)

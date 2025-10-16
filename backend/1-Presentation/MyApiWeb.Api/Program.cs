@@ -15,7 +15,7 @@ try
     Log.Information("当前环境: {Environment}", environment);
 
     // 定义需要加载的模块配置文件
-    var configModules = new[] { "database", "jwt", "cors", "cap", "serilog" };
+    var configModules = new[] { "database", "jwt", "cors", "cap", "serilog", "onlineuser" };
 
     foreach (var module in configModules)
     {
@@ -63,6 +63,9 @@ try
     builder.Services.AddSwaggerDocumentation();
 
     builder.Services.AddCapMessageBus(builder.Configuration);
+
+    // 注册 Quartz.NET 定时任务调度
+    builder.Services.AddQuartzWithJobs(builder.Configuration);
 
     var app = builder.Build();
 

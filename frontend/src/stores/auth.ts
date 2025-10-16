@@ -5,6 +5,7 @@ import { UsersApi } from '@/api'
 import { useUserStore } from './user'
 import { usePermissionStore } from './permission'
 import { useMenuStore } from './menu'
+import { useOnlineUserStore } from './onlineUser'
 import { CacheManager } from '@/utils/cache'
 
 export const useAuthStore = defineStore(
@@ -41,6 +42,7 @@ export const useAuthStore = defineStore(
         const userStore = useUserStore()
         const permissionStore = usePermissionStore()
         const menuStore = useMenuStore()
+        const onlineUserStore = useOnlineUserStore()
 
         const userData = await UsersApi.getProfile()
         userStore.setUser(userData)
@@ -51,6 +53,15 @@ export const useAuthStore = defineStore(
           await menuStore.refreshMenus()
         } catch (err) {
           console.error('加载菜单失败:', err)
+        }
+
+        // 登录成功后建立 SignalR 连接
+        try {
+          await onlineUserStore.initConnection(() => token.value || '')
+          console.log('SignalR 连接已建立')
+        } catch (err) {
+          console.error('建立 SignalR 连接失败:', err)
+          // 不影响登录流程,继续
         }
 
         return true
@@ -95,10 +106,16 @@ export const useAuthStore = defineStore(
       const userStore = useUserStore()
       const permissionStore = usePermissionStore()
       const menuStore = useMenuStore()
+      const onlineUserStore = useOnlineUserStore()
 
       userStore.clearUser()
       permissionStore.clearUserPermissions()
       menuStore.clearMenus()
+
+      // 断开 SignalR 连接
+      onlineUserStore.disconnect().catch((err) => {
+        console.error('断开 SignalR 连接失败:', err)
+      })
 
       CacheManager.clear()
     }

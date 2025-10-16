@@ -16,6 +16,19 @@
 
       <!-- 右侧用户信息和操作按钮 -->
       <div class="user-info">
+        <a-badge :count="onlineUserCount" :overflow-count="999" :offset="[-5, 5]">
+          <a-button
+            type="text"
+            shape="circle"
+            @click="router.push({ name: 'OnlineUserManagement' })"
+            class="header-btn"
+            title="在线用户"
+          >
+            <template #icon>
+              <TeamOutlined />
+            </template>
+          </a-button>
+        </a-badge>
         <a-button
           type="text"
           shape="circle"
@@ -94,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref, computed, watch, onMounted, type Component } from 'vue'
+import { h, ref, computed, watch, onMounted, onUnmounted, type Component } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { MenuProps } from 'ant-design-vue'
 import {
@@ -103,6 +116,7 @@ import {
   LogoutOutlined,
   HomeOutlined,
   SettingOutlined,
+  TeamOutlined,
 } from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -111,6 +125,7 @@ import { useMenuStore } from '@/stores/menu'
 import { usePermissionStore } from '@/stores/permission'
 import { useTabStore } from '@/stores/tabs'
 import { useThemeStore } from '@/stores/theme'
+import { useOnlineUserStore } from '@/stores/onlineUser'
 import { message } from '@/plugins/antd'
 import type { MenuDto } from '@/types/api'
 import { getIconComponent } from '@/utils/iconRegistry'
@@ -124,6 +139,8 @@ const collapsed = ref(localStorage.getItem('menu-collapsed') === 'true')
 const refreshing = ref(false)
 const openMenuKeys = ref<string[]>([])
 const showSettings = ref(false)
+const onlineUserCount = ref(0)
+let onlineUserCountTimer: number | null = null
 
 const authStore = useAuthStore()
 const userStore = useUserStore()
@@ -131,6 +148,7 @@ const menuStore = useMenuStore()
 const { menus: menuList } = storeToRefs(menuStore)
 const permissionStore = usePermissionStore()
 const themeStore = useThemeStore()
+const onlineUserStore = useOnlineUserStore()
 const router = useRouter()
 const route = useRoute()
 const tabStore = useTabStore()
@@ -188,7 +206,27 @@ onMounted(async () => {
   } catch (error) {
     console.error('加载菜单失败:', error)
   }
+
+  // 定期获取在线用户数量
+  fetchOnlineUserCount()
+  onlineUserCountTimer = setInterval(fetchOnlineUserCount, 30000) // 每30秒刷新一次
 })
+
+onUnmounted(() => {
+  if (onlineUserCountTimer) {
+    clearInterval(onlineUserCountTimer)
+    onlineUserCountTimer = null
+  }
+})
+
+async function fetchOnlineUserCount() {
+  if (!authStore.isAuthenticated) return
+  try {
+    onlineUserCount.value = await onlineUserStore.fetchCount()
+  } catch (error) {
+    console.error('获取在线用户数量失败:', error)
+  }
+}
 
 function buildMenuItems(
   menus: MenuDto[],

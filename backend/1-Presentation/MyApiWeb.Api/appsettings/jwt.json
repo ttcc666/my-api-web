@@ -16,7 +16,7 @@
 
     // Access Token 有效期 (分钟)
     // 建议: 开发环境 30-60 分钟 | 生产环境 15-30 分钟
-    "AccessTokenExpirationMinutes": 1,
+    "AccessTokenExpirationMinutes": 30,
 
     // Refresh Token 有效期 (天)
     // 建议: 7-30 天 (根据安全需求调整)

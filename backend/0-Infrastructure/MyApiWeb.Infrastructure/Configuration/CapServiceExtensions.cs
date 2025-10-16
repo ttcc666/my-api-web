@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Savorboard.CAP.InMemoryMessageQueue;
+using System.Reflection;
 
 namespace MyApiWeb.Infrastructure.Configuration;
 
@@ -19,6 +20,9 @@ public static class CapServiceExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // 自动注册所有 CAP 订阅者
+        RegisterCapSubscribers(services);
+
         services.AddCap(options =>
         {
             ConfigureStorage(options, configuration);
@@ -74,7 +78,8 @@ public static class CapServiceExtensions
             case "postgresql":
                 options.UsePostgreSql(pgOptions =>
                 {
-                    pgOptions.ConnectionString = configuration.GetConnectionString("DefaultConnection")!;
+                    var connectionString = configuration.GetConnectionString("DefaultConnection")!;
+                    pgOptions.DataSource = Npgsql.NpgsqlDataSource.Create(connectionString);
                     pgOptions.Schema = configuration["CAP:Storage:Schema"] ?? "cap";
                 });
                 break;
@@ -160,5 +165,44 @@ public static class CapServiceExtensions
             default:
                 throw new ArgumentException($"不支持的传输类型: {transportType}");
         }
+    }
+
+    /// <summary>
+    /// 自动注册所有 CAP 订阅者
+    /// 扫描程序集中所有实现 ICapSubscribe 接口的类并注册到 DI 容器
+    /// </summary>
+    private static void RegisterCapSubscribers(IServiceCollection services)
+    {
+        // 获取 MyApiWeb.Services 程序集
+        var servicesAssembly = AppDomain.CurrentDomain.GetAssemblies()
+            .FirstOrDefault(a => a.GetName().Name == "MyApiWeb.Services");
+
+        if (servicesAssembly == null)
+        {
+            // 如果程序集未加载,尝试通过类型引用加载
+            var serviceType = Type.GetType("MyApiWeb.Services.Subscribers.OnlineUserEventSubscriber, MyApiWeb.Services");
+            servicesAssembly = serviceType?.Assembly;
+        }
+
+        if (servicesAssembly == null)
+        {
+            throw new InvalidOperationException("无法加载 MyApiWeb.Services 程序集");
+        }
+
+        // 查找所有实现 ICapSubscribe 接口的具体类
+        var subscriberTypes = servicesAssembly.GetTypes()
+            .Where(type => type.IsClass &&
+                          !type.IsAbstract &&
+                          typeof(ICapSubscribe).IsAssignableFrom(type))
+            .ToList();
+
+        // 注册每个订阅者
+        foreach (var subscriberType in subscriberTypes)
+        {
+            services.AddScoped(subscriberType);
+            Console.WriteLine($"[CAP] 已注册订阅者: {subscriberType.FullName}");
+        }
+
+        Console.WriteLine($"[CAP] 共注册 {subscriberTypes.Count} 个订阅者");
     }
 }

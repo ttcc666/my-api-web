@@ -8,15 +8,15 @@ namespace MyApiWeb.Models.Entities
         [SugarColumn(IsPrimaryKey = true)]
         public override string Id { get; set; } = Guid.NewGuid().ToString();
 
-        public string UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
         [SugarColumn(Length = 512)]
-        public string Token { get; set; }
+        public string Token { get; set; } = string.Empty;
 
         /// <summary>
         /// 关联的 Access Token 的 JWT ID
         /// </summary>
-        public string JwtId { get; set; }
+        public string JwtId { get; set; } = string.Empty;
 
         /// <summary>
         /// 是否已被使用（用于实现令牌轮换）
@@ -33,6 +33,6 @@ namespace MyApiWeb.Models.Entities
         public DateTime ExpiresAt { get; set; }
 
         [Navigate(NavigateType.OneToOne, nameof(UserId))]
-        public User User { get; set; }
+        public User? User { get; set; }
     }
 }

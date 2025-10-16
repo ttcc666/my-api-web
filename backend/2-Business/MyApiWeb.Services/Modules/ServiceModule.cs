@@ -42,6 +42,15 @@ namespace MyApiWeb.Services.Modules
                    .As<IDeviceService>()
                    .InstancePerLifetimeScope();
 
+            builder.RegisterType<OnlineUserService>()
+                   .As<IOnlineUserService>()
+                   .InstancePerLifetimeScope();
+
+            // 注册 CAP 订阅者
+            builder.RegisterType<Subscribers.OnlineUserEventSubscriber>()
+                   .AsSelf()
+                   .InstancePerLifetimeScope();
+
             // 这里可以注册其他服务
             // 例如：builder.RegisterType<ProductService>().As<IProductService>();
         }

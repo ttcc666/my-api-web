@@ -7,11 +7,8 @@ using System.Security.Claims;
 namespace MyApiWeb.Api.Controllers
 {
     /// <summary>
-    /// API 控制器基类
+    /// API 控制器基类 (非泛型版本)
     /// </summary>
-    /// <typeparam name="TService">服务类型</typeparam>
-    /// <typeparam name="TEntity">实体类型</typeparam>
-    /// <typeparam name="TKey">主键类型</typeparam>
     /// <remarks>
     /// 提供统一的 API 响应格式、错误处理和常用辅助方法。
     /// 所有业务 Controller 应继承此基类以保持一致的响应结构。
@@ -20,30 +17,8 @@ namespace MyApiWeb.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public abstract class ApiControllerBase<TService, TEntity, TKey> : ControllerBase
-        where TKey : IEquatable<TKey>
+    public abstract class ApiControllerBase : ControllerBase
     {
-        /// <summary>
-        /// 日志记录器实例
-        /// </summary>
-        protected readonly ILogger<ApiControllerBase<TService, TEntity, TKey>> _logger;
-
-        /// <summary>
-        /// 业务服务实例
-        /// </summary>
-        protected readonly TService _service;
-
-        /// <summary>
-        /// 初始化 API 控制器基类
-        /// </summary>
-        /// <param name="logger">日志记录器</param>
-        /// <param name="service">业务服务</param>
-        protected ApiControllerBase(ILogger<ApiControllerBase<TService, TEntity, TKey>> logger, TService service)
-        {
-            _logger = logger;
-            _service = service;
-        }
-
         /// <summary>
         /// 获取当前登录用户的 ID
         /// </summary>
@@ -107,6 +82,41 @@ namespace MyApiWeb.Api.Controllers
                     kvp => kvp.Value!.Errors.Select(error => error.ErrorMessage).ToArray());
 
             return Error(message, StatusCodes.Status400BadRequest, errors);
+        }
+    }
+
+    /// <summary>
+    /// API 控制器基类 (泛型版本)
+    /// </summary>
+    /// <typeparam name="TService">服务类型</typeparam>
+    /// <typeparam name="TEntity">实体类型</typeparam>
+    /// <typeparam name="TKey">主键类型</typeparam>
+    /// <remarks>
+    /// 继承自非泛型 ApiControllerBase,添加了泛型服务支持。
+    /// 适用于需要标准 CRUD 操作的控制器。
+    /// </remarks>
+    public abstract class ApiControllerBase<TService, TEntity, TKey> : ApiControllerBase
+        where TKey : IEquatable<TKey>
+    {
+        /// <summary>
+        /// 日志记录器实例
+        /// </summary>
+        protected readonly ILogger<ApiControllerBase<TService, TEntity, TKey>> _logger;
+
+        /// <summary>
+        /// 业务服务实例
+        /// </summary>
+        protected readonly TService _service;
+
+        /// <summary>
+        /// 初始化 API 控制器基类
+        /// </summary>
+        /// <param name="logger">日志记录器</param>
+        /// <param name="service">业务服务</param>
+        protected ApiControllerBase(ILogger<ApiControllerBase<TService, TEntity, TKey>> logger, TService service)
+        {
+            _logger = logger;
+            _service = service;
         }
     }
 }
