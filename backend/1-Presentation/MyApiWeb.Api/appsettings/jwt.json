@@ -1,0 +1,25 @@
+{
+  // ========================================
+  // JWT 身份认证配置
+  // ========================================
+  "JwtSettings": {
+    // JWT 签名密钥 (必须至少 32 字符)
+    // ⚠️ 生产环境必须通过环境变量或密钥管理服务 (如 Azure Key Vault) 设置
+    // 环境变量示例: JwtSettings__Secret
+    "Secret": "A_VERY_LONG_AND_SECURE_SECRET_KEY_REPLACE_IT_LATER_!@#$%",
+
+    // JWT 签发者 (通常为应用名称或域名)
+    "Issuer": "MyApiWeb",
+
+    // JWT 受众 (令牌的目标接收者,通常为客户端应用标识)
+    "Audience": "MyApiWeb.Client",
+
+    // Access Token 有效期 (分钟)
+    // 建议: 开发环境 30-60 分钟 | 生产环境 15-30 分钟
+    "AccessTokenExpirationMinutes": 30,
+
+    // Refresh Token 有效期 (天)
+    // 建议: 7-30 天 (根据安全需求调整)
+    "RefreshTokenExpirationDays": 7
+  }
+}

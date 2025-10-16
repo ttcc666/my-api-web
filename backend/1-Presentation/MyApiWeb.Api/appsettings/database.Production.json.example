@@ -1,0 +1,32 @@
+{
+  // ========================================
+  // 生产环境数据库配置示例
+  // ========================================
+  // 使用说明：
+  // 1. 复制此文件并重命名为 database.Production.json
+  // 2. 修改配置值以匹配你的生产环境
+  // 3. 不要将 database.Production.json 提交到版本控制
+  // 4. 敏感信息建议使用环境变量或 Azure Key Vault
+  // ========================================
+
+  "ConnectionStrings": {
+    // 生产环境数据库连接
+    // 建议使用环境变量替换密码: ${DB_PASSWORD}
+    // 或通过 CI/CD 管道注入完整连接字符串
+    "DefaultConnection": "Server=production-server.database.windows.net;Database=MyApiWebDb;User Id=your-sql-user;Password=${DB_PASSWORD};TrustServerCertificate=false;Encrypt=true;Connection Timeout=30;"
+  },
+
+  "DatabaseSettings": {
+    // ⚠️ 生产环境必须禁用自动迁移
+    // 数据库变更应通过受控的迁移脚本执行
+    "EnableMigrations": false,
+
+    // ⚠️ 生产环境必须禁用自动种子数据
+    // 避免意外覆盖生产数据
+    "EnableDataSeeding": false,
+
+    // ⚠️ 生产环境严禁强制重播种
+    // 此操作会删除并重建数据
+    "ForceReseedOnStartup": false
+  }
+}

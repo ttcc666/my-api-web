@@ -1,0 +1,33 @@
+{
+  // ========================================
+  // 数据库连接字符串
+  // ========================================
+  "ConnectionStrings": {
+    // SQL Server 连接字符串
+    // - Server: 数据库服务器地址 (localhost 表示本机)
+    // - Database: 数据库名称
+    // - Trusted_Connection=true: 使用 Windows 身份验证
+    // - TrustServerCertificate=true: 信任服务器证书 (开发环境使用)
+    //
+    // 生产环境建议使用用户名密码方式:
+    // "Server=your-server;Database=MyApiWebDb;User Id=sa;Password=YourPassword;TrustServerCertificate=true;Encrypt=true;"
+    "DefaultConnection": "Server=localhost;Database=MyApiWebDb;Trusted_Connection=true;TrustServerCertificate=true;"
+  },
+
+  // ========================================
+  // 数据库管理配置 (SqlSugar Code First)
+  // ========================================
+  "DatabaseSettings": {
+    // 是否启用自动迁移 (自动创建数据库和表结构)
+    // 开发环境: true  | 生产环境: false (手动执行迁移)
+    "EnableMigrations": false,
+
+    // 是否在应用启动时执行数据种子 (插入初始数据)
+    // 开发环境: true  | 生产环境: false (避免重复插入)
+    "EnableDataSeeding": false,
+
+    // 是否强制每次启动时重新播种数据 (会删除并重新创建种子数据)
+    // 开发环境调试用: true  | 其他情况: false (避免数据丢失)
+    "ForceReseedOnStartup": false
+  }
+}

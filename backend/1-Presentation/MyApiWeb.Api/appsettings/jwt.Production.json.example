@@ -1,0 +1,35 @@
+{
+  // ========================================
+  // 生产环境 JWT 认证配置示例
+  // ========================================
+  // 使用说明：
+  // 1. 复制此文件并重命名为 jwt.Production.json
+  // 2. ⚠️ 强烈建议不要在配置文件中硬编码 Secret
+  // 3. 推荐方式：
+  //    - 方式1: 环境变量 JwtSettings__Secret
+  //    - 方式2: Azure Key Vault
+  //    - 方式3: AWS Secrets Manager
+  // 4. 不要将 jwt.Production.json 提交到版本控制
+  // ========================================
+
+  "JwtSettings": {
+    // JWT 签名密钥 - ⚠️ 生产环境必须使用强密钥（至少 64 字符）
+    // 推荐：通过环境变量设置 JwtSettings__Secret
+    // 可使用工具生成强密钥：openssl rand -base64 64
+    "Secret": "${JWT_SECRET}",
+
+    // JWT 签发者 - 通常为你的域名或应用标识
+    "Issuer": "MyApiWeb.Production",
+
+    // JWT 受众 - 客户端应用标识
+    "Audience": "MyApiWeb.Client",
+
+    // Access Token 有效期 (分钟)
+    // 生产环境建议: 15-30 分钟 (平衡安全性和用户体验)
+    "AccessTokenExpirationMinutes": 15,
+
+    // Refresh Token 有效期 (天)
+    // 生产环境建议: 7-30 天 (根据安全需求调整)
+    "RefreshTokenExpirationDays": 7
+  }
+}

@@ -1,0 +1,197 @@
+# ========================================
+# .NET Core / ASP.NET Core
+# ========================================
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# User-specific files
+*.rsuser
+*.userprefs
+
+# Auto Generated Files
+mono_crash.*
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# ========================================
+# 环境特定配置文件（重要！）
+# ========================================
+
+# 排除所有生产环境配置（包含敏感信息）
+**/appsettings.Production.json
+**/appsettings.Staging.json
+**/appsettings.Local.json
+
+# 排除模块化配置的生产环境版本
+**/appsettings/database.Production.json
+**/appsettings/jwt.Production.json
+**/appsettings/cors.Production.json
+**/appsettings/cap.Production.json
+**/appsettings/serilog.Production.json
+
+**/appsettings/database.Staging.json
+**/appsettings/jwt.Staging.json
+**/appsettings/cors.Staging.json
+**/appsettings/cap.Staging.json
+**/appsettings/serilog.Staging.json
+
+# 保留示例文件（.example 后缀）
+!**/appsettings/*.example
+
+# ========================================
+# 敏感数据和密钥
+# ========================================
+
+# User secrets
+**/secrets.json
+
+# 密钥文件
+*.pfx
+*.p12
+*.key
+*.pem
+*.cer
+*.crt
+
+# 环境变量文件
+.env
+.env.local
+.env.production
+.env.staging
+
+# ========================================
+# 日志文件
+# ========================================
+
+# Serilog 日志
+**/logs/*.log
+**/logs/*.txt
+logs/
+
+# ========================================
+# 数据库文件
+# ========================================
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# SQL Server Local DB
+*.mdf
+*.ldf
+
+# ========================================
+# NuGet
+# ========================================
+
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+
+# NuGet Symbol Packages
+*.snupkg
+
+# NuGet v3's project.json files
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ========================================
+# Test Results
+# ========================================
+
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# Coverage
+*.coverage
+*.coveragexml
+coverage/
+*.lcov
+
+# ========================================
+# Rider
+# ========================================
+
+.idea/
+*.sln.iml
+
+# ========================================
+# Others
+# ========================================
+
+# Backup files
+*.bak
+*.tmp
+*.temp
+*~
+
+# Publish profiles
+**/PublishProfiles/
+*.pubxml
+*.pubxml.user
+
+# Web publish settings
+*.Publish.xml
+
+# Click-Once directory
+publish/
+
+# Database migrations (if using EF Core Migrations scripts)
+# Uncomment if you want to exclude migration scripts
+# **/Migrations/*.cs
+
+# Node modules (if using frontend tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Mac
+.DS_Store
+
+# ========================================
+# 项目特定忽略
+# ========================================
+
+# 本地开发用的测试数据
+**/TestData/
+**/SampleData/
+
+# API 文档生成的临时文件
+**/wwwroot/swagger/
+
+# 上传的文件目录（如果有）
+**/uploads/
+**/wwwroot/uploads/

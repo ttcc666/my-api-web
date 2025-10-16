@@ -9,6 +9,32 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
+    // 加载模块化配置文件
+    var environment = builder.Environment.EnvironmentName;
+    Log.Information("当前环境: {Environment}", environment);
+
+    // 定义需要加载的模块配置文件
+    var configModules = new[] { "database", "jwt", "cors", "cap", "serilog" };
+
+    foreach (var module in configModules)
+    {
+        // 加载基础配置
+        builder.Configuration.AddJsonFile(
+            $"appsettings/{module}.json",
+            optional: true,
+            reloadOnChange: true);
+
+        // 加载环境特定配置（会覆盖基础配置）
+        builder.Configuration.AddJsonFile(
+            $"appsettings/{module}.{environment}.json",
+            optional: true,
+            reloadOnChange: true);
+
+        Log.Information("已加载模块配置: {Module}", module);
+    }
+
+    Log.Information("所有模块化配置文件加载完成");
+
     // 配置 Serilog
     builder.Host.AddSerilogLogging();
 

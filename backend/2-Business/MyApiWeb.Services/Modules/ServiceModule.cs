@@ -16,11 +16,11 @@ namespace MyApiWeb.Services.Modules
             builder.RegisterType<UserService>()
                    .As<IUserService>()
                    .InstancePerLifetimeScope();
-            
+
             builder.RegisterType<CurrentUser>()
                    .As<ICurrentUser>()
                    .InstancePerLifetimeScope();
-            
+
             builder.RegisterType<TokenService>()
                    .As<ITokenService>()
                    .InstancePerLifetimeScope();
@@ -37,7 +37,11 @@ namespace MyApiWeb.Services.Modules
             builder.RegisterType<MenuService>()
                    .As<IMenuService>()
                    .InstancePerLifetimeScope();
- 
+
+            builder.RegisterType<DeviceService>()
+                   .As<IDeviceService>()
+                   .InstancePerLifetimeScope();
+
              // 这里可以注册其他服务
              // 例如：builder.RegisterType<ProductService>().As<IProductService>();
         }

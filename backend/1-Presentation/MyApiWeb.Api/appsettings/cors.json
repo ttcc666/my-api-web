@@ -1,0 +1,15 @@
+{
+  // ========================================
+  // CORS 跨域资源共享配置
+  // ========================================
+  "CorsSettings": {
+    // 允许访问 API 的前端域名白名单
+    // 开发环境通过 Program.cs 中的条件判断自动允许 localhost
+    // 生产环境必须明确列出所有合法的前端域名
+    "AllowedOrigins": [
+      "https://yourdomain.com",           // 主域名
+      "https://www.yourdomain.com",       // WWW 子域名
+      "https://admin.yourdomain.com"      // 管理后台子域名
+    ]
+  }
+}
