@@ -1,94 +1,109 @@
-import { ref, readonly, computed } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { AuthApi } from '@/api'
 import type { MenuDto } from '@/types/api'
-import { menuCache } from '@/utils/cache'
+import { cacheConfig } from '@/config'
 
-export const useMenuStore = defineStore('menu', () => {
-  const menus = ref<MenuDto[]>([])
-  const loading = ref(false)
-  const loaded = ref(false)
-  const error = ref<string | null>(null)
+const MENU_TTL = cacheConfig.menuCacheExpiry
 
-  let loadPromise: Promise<void> | null = null
+export const useMenuStore = defineStore(
+  'menu',
+  () => {
+    const menus = ref<MenuDto[]>([])
+    const loading = ref(false)
+    const loaded = ref(false)
+    const error = ref<string | null>(null)
+    const lastLoadedAt = ref<number | null>(null)
 
-  const fetchMenus = async (forceRefresh = false) => {
-    if (forceRefresh) {
-      menuCache.remove()
+    let loadPromise: Promise<void> | null = null
+
+    const isCacheValid = () => {
+      if (!loaded.value || !lastLoadedAt.value) {
+        return false
+      }
+      return Date.now() - lastLoadedAt.value < MENU_TTL
     }
 
-    const cached = menuCache.get() as MenuDto[] | null
-    if (cached && !forceRefresh) {
-      menus.value = cached
-      loaded.value = true
-      return
+    const fetchMenus = async (forceRefresh = false) => {
+      if (!forceRefresh && isCacheValid()) {
+        return
+      }
+
+      loading.value = true
+      error.value = null
+
+      try {
+        const data = await AuthApi.getCurrentUserMenus()
+        menus.value = Array.isArray(data) ? data : []
+        loaded.value = true
+        lastLoadedAt.value = Date.now()
+      } catch (err) {
+        error.value = (err instanceof Error ? err.message : String(err)) || '加载菜单失败'
+        loaded.value = false
+        lastLoadedAt.value = null
+        throw err
+      } finally {
+        loading.value = false
+      }
     }
 
-    loading.value = true
-    error.value = null
+    const loadMenus = async () => {
+      if (isCacheValid()) {
+        return
+      }
 
-    try {
-      const data = await AuthApi.getCurrentUserMenus()
-      menus.value = Array.isArray(data) ? data : []
-      menuCache.set(menus.value)
-      loaded.value = true
-    } catch (err) {
-      error.value = (err instanceof Error ? err.message : String(err)) || '加载菜单失败'
-      loaded.value = false
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
+      if (loadPromise) {
+        return loadPromise
+      }
 
-  const loadMenus = async () => {
-    if (loaded.value) {
-      return
-    }
+      loadPromise = (async () => {
+        try {
+          await fetchMenus()
+        } finally {
+          loadPromise = null
+        }
+      })()
 
-    if (loadPromise) {
       return loadPromise
     }
 
-    loadPromise = (async () => {
-      try {
-        await fetchMenus(false)
-      } finally {
-        loadPromise = null
+    const ensureLoaded = async () => {
+      if (!isCacheValid()) {
+        await loadMenus()
       }
-    })()
-
-    return loadPromise
-  }
-
-  const ensureLoaded = async () => {
-    if (!loaded.value) {
-      await loadMenus()
     }
-  }
 
-  const refreshMenus = async () => {
-    loaded.value = false
-    loadPromise = null
-    await fetchMenus(true)
-  }
+    const refreshMenus = async () => {
+      loaded.value = false
+      lastLoadedAt.value = null
+      loadPromise = null
+      await fetchMenus(true)
+    }
 
-  const clearMenus = () => {
-    menus.value = []
-    loading.value = false
-    loaded.value = false
-    error.value = null
-    loadPromise = null
-  }
+    const clearMenus = () => {
+      menus.value = []
+      loading.value = false
+      loaded.value = false
+      error.value = null
+      lastLoadedAt.value = null
+      loadPromise = null
+    }
 
-  return {
-    menus: computed(() => menus.value),
-    loading: readonly(loading),
-    loaded: readonly(loaded),
-    error: readonly(error),
-    loadMenus,
-    ensureLoaded,
-    refreshMenus,
-    clearMenus,
-  }
-})
+    return {
+      menus,
+      loading,
+      loaded,
+      error,
+      lastLoadedAt,
+      loadMenus,
+      ensureLoaded,
+      refreshMenus,
+      clearMenus,
+    }
+  },
+  {
+    persist: {
+      pick: ['menus', 'loaded', 'lastLoadedAt'],
+    },
+  },
+)

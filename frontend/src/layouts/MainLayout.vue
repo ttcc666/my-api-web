@@ -5,12 +5,24 @@
       <div class="logo">My App</div>
 
       <!-- 顶部菜单，仅在 top 模式下显示 -->
-      <a-menu v-if="themeStore.layoutMode === 'top'" mode="horizontal" :items="menuItems"
-        :selectedKeys="selectedMenuKeys" @click="handleMenuClick" class="top-menu" />
+      <a-menu
+        v-if="themeStore.layoutMode === 'top'"
+        mode="horizontal"
+        :items="menuItems"
+        :selectedKeys="selectedMenuKeys"
+        @click="handleMenuClick"
+        class="top-menu"
+      />
 
       <!-- 右侧用户信息和操作按钮 -->
       <div class="user-info">
-        <a-button type="text" shape="circle" :loading="refreshing" @click="handleRefresh" class="header-btn">
+        <a-button
+          type="text"
+          shape="circle"
+          :loading="refreshing"
+          @click="handleRefresh"
+          class="header-btn"
+        >
           <template #icon>
             <ReloadOutlined />
           </template>
@@ -27,12 +39,8 @@
           </a-button>
           <template #overlay>
             <a-menu @click="handleUserMenuClick">
-              <a-menu-item key="profile">
-                <UserOutlined /><span>个人中心</span>
-              </a-menu-item>
-              <a-menu-item key="logout">
-                <LogoutOutlined /><span>退出登录</span>
-              </a-menu-item>
+              <a-menu-item key="profile"> <UserOutlined /><span>个人中心</span> </a-menu-item>
+              <a-menu-item key="logout"> <LogoutOutlined /><span>退出登录</span> </a-menu-item>
             </a-menu>
           </template>
         </a-dropdown>
@@ -42,11 +50,24 @@
     <!-- 主体内容区域 -->
     <a-layout class="layout-body">
       <!-- 侧边栏，非 top 模式下显示 -->
-      <a-layout-sider v-if="themeStore.layoutMode !== 'top'" collapsible :width="240" :collapsed="collapsed"
-        :collapsed-width="60" @collapse="handleCollapse" class="custom-sider">
-        <a-menu mode="inline" :items="menuItems" :selectedKeys="selectedMenuKeys"
-          :openKeys="collapsed ? [] : openMenuKeys" @openChange="handleOpenChange" @click="handleMenuClick"
-          class="custom-menu" />
+      <a-layout-sider
+        v-if="themeStore.layoutMode !== 'top'"
+        collapsible
+        :width="240"
+        :collapsed="collapsed"
+        :collapsed-width="60"
+        @collapse="handleCollapse"
+        class="custom-sider"
+      >
+        <a-menu
+          mode="inline"
+          :items="menuItems"
+          :selectedKeys="selectedMenuKeys"
+          :openKeys="collapsed ? [] : openMenuKeys"
+          @openChange="handleOpenChange"
+          @click="handleMenuClick"
+          class="custom-menu"
+        />
       </a-layout-sider>
 
       <!-- 内容区，使用独立 a-layout 包裹以隔离背景 -->
@@ -74,8 +95,15 @@
 
 <script setup lang="ts">
 import { h, ref, computed, watch, onMounted, type Component } from 'vue'
+import { storeToRefs } from 'pinia'
 import type { MenuProps } from 'ant-design-vue'
-import { ReloadOutlined, UserOutlined, LogoutOutlined, HomeOutlined, SettingOutlined } from '@ant-design/icons-vue'
+import {
+  ReloadOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  HomeOutlined,
+  SettingOutlined,
+} from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
@@ -100,6 +128,7 @@ const showSettings = ref(false)
 const authStore = useAuthStore()
 const userStore = useUserStore()
 const menuStore = useMenuStore()
+const { menus: menuList } = storeToRefs(menuStore)
 const permissionStore = usePermissionStore()
 const themeStore = useThemeStore()
 const router = useRouter()
@@ -119,30 +148,38 @@ const fallbackMenuItems: MenuProps['items'] = [
 ]
 
 const menuItems = computed<MenuProps['items']>(() => {
-  const menus = menuStore.menus
+  const menus = menuList.value
   const parentMap = new Map<string, string | null>()
   const items = buildMenuItems(Array.isArray(menus) ? menus : [], null, parentMap)
   menuKeyParentMap.value = parentMap
   return items.length > 0 ? items : fallbackMenuItems
 })
 
-watch(() => selectedMenuKeys.value[0], (activeKey) => {
-  if (!activeKey || collapsed.value) {
-    return
-  }
-  const map = menuKeyParentMap.value
-  const ancestors: string[] = []
-  let current = activeKey
-  while (map.has(current)) {
-    const parent = map.get(current)
-    if (!parent) break
-    ancestors.unshift(parent)
-    current = parent
-  }
-  openMenuKeys.value = ancestors
-}, { immediate: true })
+watch(
+  () => selectedMenuKeys.value[0],
+  (activeKey) => {
+    if (!activeKey || collapsed.value) {
+      return
+    }
+    const map = menuKeyParentMap.value
+    const ancestors: string[] = []
+    let current = activeKey
+    while (map.has(current)) {
+      const parent = map.get(current)
+      if (!parent) break
+      ancestors.unshift(parent)
+      current = parent
+    }
+    openMenuKeys.value = ancestors
+  },
+  { immediate: true },
+)
 
-watch(() => route.fullPath, () => tabStore.syncWithRoute(route), { immediate: true })
+watch(
+  () => route.fullPath,
+  () => tabStore.syncWithRoute(route),
+  { immediate: true },
+)
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) return
@@ -153,11 +190,21 @@ onMounted(async () => {
   }
 })
 
-function buildMenuItems(menus: MenuDto[], parentKey: string | null, map: Map<string, string | null>): MenuItem[] {
-  return menus.map((menu) => transformMenuToItem(menu, parentKey, map)).filter((item): item is MenuItem => item !== null)
+function buildMenuItems(
+  menus: MenuDto[],
+  parentKey: string | null,
+  map: Map<string, string | null>,
+): MenuItem[] {
+  return menus
+    .map((menu) => transformMenuToItem(menu, parentKey, map))
+    .filter((item): item is MenuItem => item !== null)
 }
 
-function transformMenuToItem(menu: MenuDto, parentKey: string | null, map: Map<string, string | null>): MenuItem | null {
+function transformMenuToItem(
+  menu: MenuDto,
+  parentKey: string | null,
+  map: Map<string, string | null>,
+): MenuItem | null {
   const key = resolveMenuKey(menu)
   const children = buildMenuItems(menu.children ?? [], key, map)
   if (children.length === 0 && !menu.routePath) return null
@@ -224,7 +271,7 @@ function handleMenuClick({ key }: { key: string }) {
     router.push('/')
     return
   }
-  const menu = findMenuByKey(menuStore.menus, key)
+  const menu = findMenuByKey(menuList.value, key)
   if (menu?.routeName) router.push({ name: menu.routeName })
   else if (menu?.routePath) router.push(menu.routePath)
 }
@@ -269,7 +316,6 @@ function handleLogout() {
   position: relative;
   z-index: 10;
 }
-
 
 .logo {
   font-size: 22px;
@@ -376,19 +422,19 @@ function handleLogout() {
   padding: 0 !important;
   margin: 4px auto !important;
   width: 44px !important;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.ant-layout-sider-collapsed .custom-menu :deep(.ant-menu-item-icon),
-.ant-layout-sider-collapsed .custom-menu :deep(.ant-menu-submenu-arrow) {
+.ant-layout-sider-collapsed .custom-menu :deep(.ant-menu-item-icon) {
   margin: 0 !important;
+  font-size: 18px !important;
 }
 
 .ant-layout-sider-collapsed .custom-menu :deep(.ant-menu-title-content) {
-  display: none;
+  display: none !important;
 }
 
 .custom-menu :deep(.ant-menu-item:hover),

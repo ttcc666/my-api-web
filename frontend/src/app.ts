@@ -1,11 +1,15 @@
 import { createApp } from 'vue'
 import 'ant-design-vue/dist/reset.css'
 import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
 import { setupPermissionDirective } from './directives/permission'
 import { setupApiInterceptors } from './api/interceptors'
+
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
 
 /**
  * 创建并配置 Vue 应用实例
@@ -14,7 +18,7 @@ export function createVueApp() {
   const app = createApp(App)
 
   // 配置 Pinia 状态管理
-  app.use(createPinia())
+  app.use(pinia)
 
   // 注册自定义指令
   setupPermissionDirective(app)

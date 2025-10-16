@@ -18,9 +18,11 @@ function createHomeTab(): TabItem {
   }
 }
 
-export const useTabStore = defineStore('tabs', () => {
-  const tabs = ref<TabItem[]>([createHomeTab()])
-  const activeKey = ref<string>('home')
+export const useTabStore = defineStore(
+  'tabs',
+  () => {
+    const tabs = ref<TabItem[]>([createHomeTab()])
+    const activeKey = ref<string>('home')
 
   const ensureHomeTab = () => {
     if (!tabs.value.length) {
@@ -119,14 +121,22 @@ export const useTabStore = defineStore('tabs', () => {
     activeKey.value = 'home'
   }
 
-  return {
-    tabs,
-    activeKey,
-    syncWithRoute,
-    activate,
-    remove,
-    reset,
-    closeOthers,
-    closeAll,
-  }
-})
+    ensureHomeTab()
+
+    return {
+      tabs,
+      activeKey,
+      syncWithRoute,
+      activate,
+      remove,
+      reset,
+      closeOthers,
+      closeAll,
+    }
+  },
+  {
+    persist: {
+      pick: ['tabs', 'activeKey'],
+    },
+  },
+)

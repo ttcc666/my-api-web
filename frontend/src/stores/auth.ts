@@ -1,5 +1,5 @@
-import { ref, computed, readonly } from 'vue'
-import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { defineStore, storeToRefs } from 'pinia'
 import type { UserLoginDto, UserRegisterDto } from '@/types/api'
 import { UsersApi } from '@/api'
 import { useUserStore } from './user'
@@ -7,120 +7,117 @@ import { usePermissionStore } from './permission'
 import { useMenuStore } from './menu'
 import { CacheManager } from '@/utils/cache'
 
-export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('accessToken'))
-  const refreshToken = ref<string | null>(localStorage.getItem('refreshToken'))
-  const tokenExpiresAt = ref<number | null>(null)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+export const useAuthStore = defineStore(
+  'auth',
+  () => {
+    const token = ref<string | null>(null)
+    const refreshToken = ref<string | null>(null)
+    const tokenExpiresAt = ref<number | null>(null)
+    const loading = ref(false)
+    const error = ref<string | null>(null)
 
-  const isAuthenticated = computed(() => !!token.value)
+    const isAuthenticated = computed(() => !!token.value)
 
-  const clearError = () => {
-    error.value = null
-  }
-
-  const setTokens = (accessToken: string, newRefreshToken: string) => {
-    token.value = accessToken
-    refreshToken.value = newRefreshToken
-    tokenExpiresAt.value = parseTokenExpiry(accessToken)
-
-    localStorage.setItem('accessToken', accessToken)
-    localStorage.setItem('refreshToken', newRefreshToken)
-  }
-
-  const login = async (loginData: UserLoginDto): Promise<boolean> => {
-    try {
-      loading.value = true
+    const clearError = () => {
       error.value = null
+    }
+
+    const setTokens = (accessToken: string, newRefreshToken: string) => {
+      token.value = accessToken
+      refreshToken.value = newRefreshToken
+      tokenExpiresAt.value = parseTokenExpiry(accessToken)
+    }
+
+    const login = async (loginData: UserLoginDto): Promise<boolean> => {
+      try {
+        loading.value = true
+        error.value = null
+
+        CacheManager.clear()
+
+        const tokens = await UsersApi.login(loginData)
+        setTokens(tokens.accessToken, tokens.refreshToken)
+
+        const userStore = useUserStore()
+        const permissionStore = usePermissionStore()
+        const menuStore = useMenuStore()
+
+        const userData = await UsersApi.getProfile()
+        userStore.setUser(userData)
+
+        await permissionStore.loadUserPermissions(true)
+
+        try {
+          await menuStore.refreshMenus()
+        } catch (err) {
+          console.error('加载菜单失败:', err)
+        }
+
+        return true
+      } catch (err: unknown) {
+        error.value = (err as Error).message || '登录失败'
+        return false
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const register = async (registerData: UserRegisterDto): Promise<boolean> => {
+      try {
+        loading.value = true
+        error.value = null
+
+        await UsersApi.register(registerData)
+        return true
+      } catch (err: unknown) {
+        error.value = (err as Error).message || '注册失败'
+        return false
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const shouldRefreshToken = (bufferMs = 30_000) => {
+      if (!token.value || !tokenExpiresAt.value) return false
+      return tokenExpiresAt.value - bufferMs <= Date.now()
+    }
+
+    const isAccessTokenExpired = () => {
+      if (!token.value || !tokenExpiresAt.value) return true
+      return tokenExpiresAt.value <= Date.now()
+    }
+
+    const logout = () => {
+      token.value = null
+      refreshToken.value = null
+      tokenExpiresAt.value = null
+
+      const userStore = useUserStore()
+      const permissionStore = usePermissionStore()
+      const menuStore = useMenuStore()
+
+      userStore.clearUser()
+      permissionStore.clearUserPermissions()
+      menuStore.clearMenus()
 
       CacheManager.clear()
+    }
 
-      const tokens = await UsersApi.login(loginData)
-      setTokens(tokens.accessToken, tokens.refreshToken)
-
-      const userStore = useUserStore()
-      const permissionStore = usePermissionStore()
-      const menuStore = useMenuStore()
-
-      const userData = await UsersApi.getProfile()
-      userStore.setUser(userData)
-
-      await permissionStore.loadUserPermissions(true)
-
-      try {
-        await menuStore.refreshMenus()
-      } catch (err) {
-        console.error('加载菜单失败:', err)
+    const initializeAuth = async () => {
+      if (!token.value || !refreshToken.value) {
+        return
       }
 
-      return true
-    } catch (err: unknown) {
-      error.value = (err as Error).message || '登录失败'
-      return false
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const register = async (registerData: UserRegisterDto): Promise<boolean> => {
-    try {
-      loading.value = true
-      error.value = null
-
-      await UsersApi.register(registerData)
-      return true
-    } catch (err: unknown) {
-      error.value = (err as Error).message || '注册失败'
-      return false
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const shouldRefreshToken = (bufferMs = 30_000) => {
-    if (!token.value || !tokenExpiresAt.value) return false
-    return tokenExpiresAt.value - bufferMs <= Date.now()
-  }
-
-  const isAccessTokenExpired = () => {
-    if (!token.value || !tokenExpiresAt.value) return true
-    return tokenExpiresAt.value <= Date.now()
-  }
-
-  const logout = () => {
-    token.value = null
-    refreshToken.value = null
-    tokenExpiresAt.value = null
-
-    const userStore = useUserStore()
-    const permissionStore = usePermissionStore()
-    const menuStore = useMenuStore()
-
-    userStore.clearUser()
-    permissionStore.clearUserPermissions()
-    menuStore.clearMenus()
-
-    CacheManager.clear()
-    localStorage.clear()
-  }
-
-  const initializeAuth = async () => {
-    const storedToken = localStorage.getItem('accessToken')
-    const storedRefreshToken = localStorage.getItem('refreshToken')
-
-    if (storedToken && storedRefreshToken) {
-      token.value = storedToken
-      refreshToken.value = storedRefreshToken
-      tokenExpiresAt.value = parseTokenExpiry(storedToken)
+      if (!tokenExpiresAt.value) {
+        tokenExpiresAt.value = parseTokenExpiry(token.value)
+      }
 
       const userStore = useUserStore()
       const permissionStore = usePermissionStore()
       const menuStore = useMenuStore()
+      const { user } = storeToRefs(userStore)
 
-      userStore.initializeUser()
-
-      if (!userStore.user) {
+      if (!user.value) {
         await userStore.fetchUserInfo()
       }
 
@@ -132,25 +129,30 @@ export const useAuthStore = defineStore('auth', () => {
         console.error('初始化菜单失败:', err)
       }
     }
-  }
 
-  return {
-    token: readonly(token),
-    refreshToken: readonly(refreshToken),
-    tokenExpiresAt: readonly(tokenExpiresAt),
-    loading: readonly(loading),
-    error: readonly(error),
-    isAuthenticated,
-    clearError,
-    setTokens,
-    login,
-    register,
-    logout,
-    shouldRefreshToken,
-    isAccessTokenExpired,
-    initializeAuth,
-  }
-})
+    return {
+      token,
+      refreshToken,
+      tokenExpiresAt,
+      loading,
+      error,
+      isAuthenticated,
+      clearError,
+      setTokens,
+      login,
+      register,
+      logout,
+      shouldRefreshToken,
+      isAccessTokenExpired,
+      initializeAuth,
+    }
+  },
+  {
+    persist: {
+      pick: ['token', 'refreshToken', 'tokenExpiresAt'],
+    },
+  },
+)
 
 function parseTokenExpiry(accessToken: string): number | null {
   try {

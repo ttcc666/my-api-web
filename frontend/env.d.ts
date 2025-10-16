@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import 'pinia-plugin-persistedstate'
 
 /**
  * 环境变量类型声明
