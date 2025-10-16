@@ -1,5 +1,6 @@
 using MyApiWeb.Models.DTOs;
 using MyApiWeb.Services.Interfaces;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace MyApiWeb.Services.Implements
@@ -11,6 +12,9 @@ namespace MyApiWeb.Services.Implements
     {
         public DeviceInfoDto GetDeviceInfo()
         {
+            var process = Process.GetCurrentProcess();
+            var gcMemoryInfo = GC.GetGCMemoryInfo();
+
             return new DeviceInfoDto
             {
                 OS = RuntimeInformation.OSDescription,
@@ -18,7 +22,17 @@ namespace MyApiWeb.Services.Implements
                 MachineName = Environment.MachineName,
                 ProcessorCount = Environment.ProcessorCount,
                 TickCount = Environment.TickCount64,
-                DotNetVersion = RuntimeInformation.FrameworkDescription
+                DotNetVersion = RuntimeInformation.FrameworkDescription,
+                Architecture = RuntimeInformation.OSArchitecture.ToString(),
+                ProcessArchitecture = RuntimeInformation.ProcessArchitecture.ToString(),
+                TotalMemoryMB = gcMemoryInfo.TotalAvailableMemoryBytes / 1024 / 1024,
+                AvailableMemoryMB = (gcMemoryInfo.TotalAvailableMemoryBytes - gcMemoryInfo.MemoryLoadBytes) / 1024 / 1024,
+                ProcessMemoryMB = process.WorkingSet64 / 1024 / 1024,
+                CpuUsage = Math.Round(process.TotalProcessorTime.TotalMilliseconds / Environment.TickCount64 * 100, 2),
+                SystemDirectory = Environment.SystemDirectory,
+                CurrentDirectory = Environment.CurrentDirectory,
+                Is64BitOS = Environment.Is64BitOperatingSystem,
+                Is64BitProcess = Environment.Is64BitProcess
             };
         }
     }

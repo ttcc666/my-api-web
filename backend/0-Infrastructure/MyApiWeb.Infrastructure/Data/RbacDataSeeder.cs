@@ -27,10 +27,17 @@ namespace MyApiWeb.Infrastructure.Data
         /// <summary>
         /// 初始化 RBAC 数据
         /// </summary>
-        public async Task SeedAsync()
+        /// <param name="forceReinitialize">是否强制重新初始化（删除现有数据）</param>
+        public async Task SeedAsync(bool forceReinitialize = false)
         {
             try
             {
+                if (forceReinitialize)
+                {
+                    await ClearExistingDataAsync();
+                    _logger.LogWarning("已清除所有 RBAC 数据，开始强制重新初始化");
+                }
+
                 await SeedPermissionsAsync();
                 await SeedRolesAsync();
                 await SeedSuperAdminAsync();
@@ -45,6 +52,18 @@ namespace MyApiWeb.Infrastructure.Data
         }
 
         /// <summary>
+        /// 清除现有的 RBAC 数据
+        /// </summary>
+        private async Task ClearExistingDataAsync()
+        {
+            await _dbContext.Db.Deleteable<RolePermission>().ExecuteCommandAsync();
+            await _dbContext.Db.Deleteable<UserRole>().ExecuteCommandAsync();
+            await _dbContext.Db.Deleteable<Permission>().ExecuteCommandAsync();
+            await _dbContext.Db.Deleteable<Role>().ExecuteCommandAsync();
+            _logger.LogInformation("已清除所有角色、权限及关联数据");
+        }
+
+        /// <summary>
         /// 初始化权限数据（批量插入）
         /// </summary>
         private async Task SeedPermissionsAsync()
@@ -53,23 +72,26 @@ namespace MyApiWeb.Infrastructure.Data
             var existingCount = await _dbContext.Queryable<Permission>().CountAsync();
             if (existingCount > 0)
             {
-                _logger.LogInformation("权限数据已存在，跳过初始化（共 {Count} 条）", existingCount);
+                _logger.LogInformation("权限数据已存在，跳过强制初始化（共 {Count} 条）", existingCount);
                 return;
             }
 
             var permissions = new List<Permission>
             {
                 // 用户管理权限
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "user:view", DisplayName = "查看用户", Description = "查看用户列表和详情", Group = "用户管理" },
+                new Permission { Id = Guid.NewGuid().ToString(), Name = "system:user:view", DisplayName = "查看用户", Description = "查看用户列表和详情", Group = "用户管理" },
 
                 // 角色管理权限
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "role:view", DisplayName = "查看角色", Description = "查看角色列表和详情", Group = "角色管理" },
+                new Permission { Id = Guid.NewGuid().ToString(), Name = "system:role:view", DisplayName = "查看角色", Description = "查看角色列表和详情", Group = "角色管理" },
 
                 // 权限管理权限
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "permission:view", DisplayName = "查看权限", Description = "查看权限列表和详情", Group = "权限管理" },
+                new Permission { Id = Guid.NewGuid().ToString(), Name = "system:permission:view", DisplayName = "查看权限", Description = "查看权限列表和详情", Group = "权限管理" },
 
                 // 菜单管理权限
-                new Permission { Id = Guid.NewGuid().ToString(), Name = "menu:view", DisplayName = "查看菜单", Description = "查看菜单列表和详情", Group = "菜单管理" },
+                new Permission { Id = Guid.NewGuid().ToString(), Name = "system:menu:view", DisplayName = "查看菜单", Description = "查看菜单列表和详情", Group = "菜单管理" },
+
+                // 系统监控
+                new Permission { Id = Guid.NewGuid().ToString(), Name = "system:monitor:view", DisplayName = "查看系统监控", Description = "查看系统监控信息", Group = "系统监控" }
             };
 
             // 批量插入权限
@@ -87,7 +109,7 @@ namespace MyApiWeb.Infrastructure.Data
             var existingCount = await _dbContext.Queryable<Role>().CountAsync();
             if (existingCount > 0)
             {
-                _logger.LogInformation("角色数据已存在，跳过初始化（共 {Count} 条）", existingCount);
+                _logger.LogInformation("角色数据已存在，跳过强制初始化（共 {Count} 条）", existingCount);
                 // 仍然需要确保超级管理员有所有权限
                 await AssignAllPermissionsToSuperAdminAsync();
                 return;

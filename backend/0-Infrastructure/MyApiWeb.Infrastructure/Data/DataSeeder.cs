@@ -73,7 +73,7 @@ namespace MyApiWeb.Infrastructure.Data
                         if (rbacSeeder != null)
                         {
                             logger.LogInformation("开始初始化 RBAC 权限数据...");
-                            rbacSeeder.SeedAsync().Wait();
+                            rbacSeeder.SeedAsync(forceReseed).Wait();
                             MarkSeedAsExecuted(dbContext, RbacDataSeedName, "初始化 RBAC 权限、角色和关联关系");
                             logger.LogInformation("✅ RBAC 数据初始化完成");
                         }
@@ -90,7 +90,7 @@ namespace MyApiWeb.Infrastructure.Data
                         if (menuSeeder != null)
                         {
                             logger.LogInformation("开始初始化菜单数据...");
-                            menuSeeder.SeedAsync().Wait();
+                            menuSeeder.SeedAsync(forceReseed).Wait();
                             MarkSeedAsExecuted(dbContext, MenuDataSeedName, "初始化前端菜单数据");
                             logger.LogInformation("✅ 菜单数据初始化完成");
                         }

@@ -28,10 +28,17 @@ namespace MyApiWeb.Infrastructure.Data
         /// <summary>
         /// 初始化菜单数据
         /// </summary>
-        public async Task SeedAsync()
+        /// <param name="forceReinitialize">是否强制重新初始化（删除现有数据）</param>
+        public async Task SeedAsync(bool forceReinitialize = false)
         {
             try
             {
+                if (forceReinitialize)
+                {
+                    await _dbContext.Db.Deleteable<Menu>().ExecuteCommandAsync();
+                    _logger.LogWarning("已清除所有菜单数据，开始强制重新初始化");
+                }
+
                 await SeedMenusAsync();
                 _logger.LogInformation("菜单数据种子初始化完成");
             }
@@ -79,7 +86,7 @@ namespace MyApiWeb.Infrastructure.Data
                     ParentId = SystemManagementMenuId,
                     Order = 110,
                     Type = MenuType.Route,
-                    PermissionCode = "user:view",
+                    PermissionCode = "system:user:view",
                     IsEnabled = true
                 },
                 new Menu
@@ -93,7 +100,7 @@ namespace MyApiWeb.Infrastructure.Data
                     ParentId = SystemManagementMenuId,
                     Order = 120,
                     Type = MenuType.Route,
-                    PermissionCode = "role:view",
+                    PermissionCode = "system:role:view",
                     IsEnabled = true
                 },
                 new Menu
@@ -107,9 +114,24 @@ namespace MyApiWeb.Infrastructure.Data
                     ParentId = SystemManagementMenuId,
                     Order = 130,
                     Type = MenuType.Route,
-                    PermissionCode = "menu:view",
+                    PermissionCode = "system:menu:view",
+                    IsEnabled = true
+                },
+                new Menu
+                {
+                    Id = Guid.NewGuid().ToString(), // 请生成一个新的唯一ID
+                    Code = "system-monitor",
+                    Title = "系统监控",
+                    RoutePath = "/admin/system-monitor",
+                    RouteName = "SystemMonitor", // **重要**: 这必须与前端视图组件的文件名 (SystemMonitor.vue) 匹配
+                    Icon = "DesktopOutline", // 我为您选择了一个合适的图标
+                    ParentId = SystemManagementMenuId, // 假设它属于“系统管理”菜单
+                    Order = 140, // 假设顺序在“用户管理”之后
+                    Type = MenuType.Route,
+                    PermissionCode = "system:monitor:view", // 新的权限码
                     IsEnabled = true
                 }
+
             };
 
             foreach (var menu in menus)

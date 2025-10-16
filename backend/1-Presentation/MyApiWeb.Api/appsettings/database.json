@@ -28,6 +28,6 @@
 
     // 是否强制每次启动时重新播种数据 (会删除并重新创建种子数据)
     // 开发环境调试用: true  | 其他情况: false (避免数据丢失)
-    "ForceReseedOnStartup": false
+    "ForceReseedOnStartup": true
   }
 }
