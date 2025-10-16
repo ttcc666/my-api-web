@@ -5,127 +5,89 @@ using Microsoft.Extensions.Logging;
 using MyApiWeb.Models.Entities;
 using MyApiWeb.Repository;
 using MyApiWeb.Services.Interfaces;
-using SqlSugar;
 
 namespace MyApiWeb.Infrastructure.Data
 {
-    /// <summary>
-    /// 数据种子服务
-    /// </summary>
     public static class DataSeeder
     {
-        private const string AdminUserSeedName = "AdminUser";
-        private const string RbacDataSeedName = "RbacData";
-        private const string MenuDataSeedName = "MenuData";
-
-        /// <summary>
-        /// 初始化所有种子数据
-        /// </summary>
         public static void Seed(WebApplication app)
         {
-            using (var serviceScope = app.Services.CreateScope())
+            using var scope = app.Services.CreateScope();
+            var services = scope.ServiceProvider;
+            var logger = services.GetRequiredService<ILogger<RbacDataSeeder>>();
+            var configuration = services.GetRequiredService<IConfiguration>();
+            var dbContext = services.GetRequiredService<SqlSugarDbContext>();
+
+            var enableSeeding = configuration.GetSection("DatabaseSettings:EnableDataSeeding").Get<bool?>() ?? true;
+            var forceReseed = configuration.GetSection("DatabaseSettings:ForceReseedOnStartup").Get<bool?>() ?? false;
+
+            if (!enableSeeding && !forceReseed)
             {
-                var services = serviceScope.ServiceProvider;
-                var logger = services.GetRequiredService<ILogger<RbacDataSeeder>>();
-                var configuration = services.GetRequiredService<IConfiguration>();
-                var dbContext = services.GetRequiredService<SqlSugarDbContext>();
+                logger.LogInformation("数据种子功能已禁用");
+                return;
+            }
 
-                // 检查配置是否启用种子数据
-                var enableSeeding = configuration.GetSection("DatabaseSettings:EnableDataSeeding").Get<bool?>() ?? true;
-                var forceReseed = configuration.GetSection("DatabaseSettings:ForceReseedOnStartup").Get<bool?>() ?? false;
-
-                if (!enableSeeding && !forceReseed)
+            try
+            {
+                if (forceReseed)
                 {
-                    logger.LogInformation("数据种子功能已禁用");
-                    return;
+                    logger.LogWarning("强制重新执行种子数据...");
+                    dbContext.Db.Deleteable<SeedHistory>().ExecuteCommand();
                 }
 
-                try
-                {
-                    // 如果强制重新执行，先清除历史记录
-                    if (forceReseed)
-                    {
-                        logger.LogWarning("强制重新执行种子数据...");
-                        dbContext.Db.Deleteable<SeedHistory>().ExecuteCommand();
-                    }
+                SeedAdminUser(services, dbContext, forceReseed, logger);
+                SeedData<RbacDataSeeder>(services, dbContext, forceReseed, logger);
+                SeedData<MenuDataSeeder>(services, dbContext, forceReseed, logger);
 
-                    // 初始化管理员用户
-                    if (!HasSeedExecuted(dbContext, AdminUserSeedName) || forceReseed)
-                    {
-                        var userService = services.GetService<IUserService>();
-                        if (userService != null)
-                        {
-                            logger.LogInformation("开始初始化管理员用户...");
-                            SeedAdminUser(userService).Wait();
-                            MarkSeedAsExecuted(dbContext, AdminUserSeedName, "初始化管理员用户");
-                            logger.LogInformation("✅ 管理员用户初始化完成");
-                        }
-                    }
-                    else
-                    {
-                        logger.LogInformation("⏭️ 跳过管理员用户初始化（已执行过）");
-                    }
-
-                    // 初始化 RBAC 权限数据
-                    if (!HasSeedExecuted(dbContext, RbacDataSeedName) || forceReseed)
-                    {
-                        var rbacSeeder = services.GetService<RbacDataSeeder>();
-                        if (rbacSeeder != null)
-                        {
-                            logger.LogInformation("开始初始化 RBAC 权限数据...");
-                            rbacSeeder.SeedAsync(forceReseed).Wait();
-                            MarkSeedAsExecuted(dbContext, RbacDataSeedName, "初始化 RBAC 权限、角色和关联关系");
-                            logger.LogInformation("✅ RBAC 数据初始化完成");
-                        }
-                    }
-                    else
-                    {
-                        logger.LogInformation("⏭️ 跳过 RBAC 数据初始化（已执行过）");
-                    }
-
-                    // 初始化菜单数据
-                    if (!HasSeedExecuted(dbContext, MenuDataSeedName) || forceReseed)
-                    {
-                        var menuSeeder = services.GetService<MenuDataSeeder>();
-                        if (menuSeeder != null)
-                        {
-                            logger.LogInformation("开始初始化菜单数据...");
-                            menuSeeder.SeedAsync(forceReseed).Wait();
-                            MarkSeedAsExecuted(dbContext, MenuDataSeedName, "初始化前端菜单数据");
-                            logger.LogInformation("✅ 菜单数据初始化完成");
-                        }
-                    }
-                    else
-                    {
-                        logger.LogInformation("⏭️ 跳过菜单数据初始化（已执行过）");
-                    }
-
-
-                    logger.LogInformation("🎉 所有种子数据检查完成");
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "❌ 数据种子初始化失败");
-                    throw;
-                }
+                logger.LogInformation("🎉 所有种子数据检查完成");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "❌ 数据种子初始化失败");
+                throw;
             }
         }
 
-        /// <summary>
-        /// 检查种子数据是否已执行
-        /// </summary>
-        private static bool HasSeedExecuted(SqlSugarDbContext dbContext, string seedName)
+        private static void SeedAdminUser(IServiceProvider services, SqlSugarDbContext dbContext, bool forceReseed, ILogger logger)
         {
-            return dbContext.Queryable<SeedHistory>()
-                .Where(s => s.SeedName == seedName)
-                .Any();
+            const string seedName = "AdminUser";
+            if (HasSeedExecuted(dbContext, seedName) && !forceReseed)
+            {
+                logger.LogInformation("⏭️ 跳过管理员用户初始化（已执行过）");
+                return;
+            }
+
+            var userService = services.GetService<IUserService>();
+            if (userService != null)
+            {
+                logger.LogInformation("开始初始化管理员用户...");
+                CreateAdminUser(userService).Wait();
+                MarkSeedAsExecuted(dbContext, seedName, "初始化管理员用户");
+                logger.LogInformation("✅ 管理员用户初始化完成");
+            }
         }
 
-        /// <summary>
-        /// 标记种子数据为已执行
-        /// </summary>
-        private static void MarkSeedAsExecuted(SqlSugarDbContext dbContext, string seedName, string remarks)
+        private static void SeedData<T>(IServiceProvider services, SqlSugarDbContext dbContext, bool forceReseed, ILogger logger) where T : IDataSeeder
         {
+            var seeder = services.GetService<T>();
+            if (seeder == null) return;
+
+            if (HasSeedExecuted(dbContext, seeder.SeedName) && !forceReseed)
+            {
+                logger.LogInformation("⏭️ 跳过 {Name} 初始化（已执行过）", seeder.SeedName);
+                return;
+            }
+
+            logger.LogInformation("开始初始化 {Name}...", seeder.SeedName);
+            seeder.SeedAsync(forceReseed).Wait();
+            MarkSeedAsExecuted(dbContext, seeder.SeedName, $"初始化 {seeder.SeedName}");
+            logger.LogInformation("✅ {Name} 初始化完成", seeder.SeedName);
+        }
+
+        private static bool HasSeedExecuted(SqlSugarDbContext dbContext, string seedName) =>
+            dbContext.Queryable<SeedHistory>().Where(s => s.SeedName == seedName).Any();
+
+        private static void MarkSeedAsExecuted(SqlSugarDbContext dbContext, string seedName, string remarks) =>
             dbContext.Insertable(new SeedHistory
             {
                 SeedName = seedName,
@@ -133,12 +95,8 @@ namespace MyApiWeb.Infrastructure.Data
                 ExecutedBy = "System",
                 Remarks = remarks
             }).ExecuteCommand();
-        }
 
-        /// <summary>
-        /// 创建默认管理员用户
-        /// </summary>
-        private static async Task SeedAdminUser(IUserService userService)
+        private static async Task CreateAdminUser(IUserService userService)
         {
             if (!await userService.UsernameExistsAsync("admin"))
             {
