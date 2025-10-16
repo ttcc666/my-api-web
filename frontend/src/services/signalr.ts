@@ -1,4 +1,9 @@
-import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr'
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  HubConnectionState,
+  LogLevel,
+} from '@microsoft/signalr'
 import { apiConfig } from '@/config'
 
 /**
@@ -82,11 +87,24 @@ export class SignalRService {
   /**
    * 断开 SignalR 连接
    */
+  /**
+   * 断开连接
+   */
   async disconnect(): Promise<void> {
     this.stopHeartbeat()
 
     if (this.connection) {
       try {
+        // 在断开前先调用 Logout 方法,通知服务器这是主动退出
+        if (this.connection.state === HubConnectionState.Connected) {
+          try {
+            await this.connection.invoke('Logout')
+            console.log('[SignalR] 已通知服务器主动退出')
+          } catch (error) {
+            console.warn('[SignalR] 调用 Logout 方法失败', error)
+          }
+        }
+
         await this.connection.stop()
         console.log('[SignalR] 连接已断开')
       } catch (error) {
@@ -146,6 +164,7 @@ export class SignalRService {
 
   /**
    * 监听服务器推送的强制下线事件
+   * 注意：SignalR 事件名称不区分大小写，统一使用小写
    */
   onForceDisconnect(callback: (data: { reason: string; timestamp: string }) => void): void {
     if (!this.connection) {
@@ -153,8 +172,9 @@ export class SignalRService {
       return
     }
 
-    this.connection.on('forceDisconnect', callback)
-    console.log('[SignalR] 已注册 forceDisconnect 事件监听器')
+    // 使用小写事件名称，因为 SignalR 默认将事件名转换为小写
+    this.connection.on('forcedisconnect', callback)
+    console.log('[SignalR] 已注册 forcedisconnect 事件监听器')
   }
 
   /**
@@ -166,9 +186,9 @@ export class SignalRService {
     }
 
     if (callback) {
-      this.connection.off('forceDisconnect', callback)
+      this.connection.off('forcedisconnect', callback)
     } else {
-      this.connection.off('forceDisconnect')
+      this.connection.off('forcedisconnect')
     }
   }
 

@@ -4,11 +4,13 @@ import type {
   OnlineUserDto,
   OnlineUserStatisticsDto,
   OnlineUserListResponseDto,
+  OnlineUserQueryParams,
 } from '@/types/api'
 import { OnlineUsersApi } from '@/api/onlineUsers'
 import { createSignalRService, destroySignalRService } from '@/services/signalr'
 import type { SignalRService } from '@/services/signalr'
-import { message } from '@/plugins/antd'
+import { message, Modal } from 'ant-design-vue'
+import router from '@/router'
 
 export const useOnlineUserStore = defineStore('onlineUser', () => {
   // SignalR 连接实例
@@ -48,9 +50,23 @@ export const useOnlineUserStore = defineStore('onlineUser', () => {
 
       // 注册强制下线事件监听器
       signalRService.value.onForceDisconnect((data) => {
-        message.warning(`您已被管理员强制下线: ${data.reason}`)
         console.log('[OnlineUser] 收到强制下线通知', data)
-        // 这里不需要手动断开连接,服务器会断开
+
+        // 显示被踢下线的 Modal 对话框
+        Modal.warning({
+          title: '账号已被强制下线',
+          content: data.reason || '您的账号已被管理员强制下线，请重新登录。',
+          okText: '确定',
+          onOk: async () => {
+            // 执行登出操作
+            await handleForceLogout()
+          },
+        })
+
+        // 设置 3 秒后自动执行登出
+        setTimeout(async () => {
+          await handleForceLogout()
+        }, 3000)
       })
 
       // 建立连接
@@ -61,6 +77,31 @@ export const useOnlineUserStore = defineStore('onlineUser', () => {
       error.value = (err as Error).message || '建立 SignalR 连接失败'
       console.error('[OnlineUser] 连接失败', err)
       throw err
+    }
+  }
+
+  /**
+   * 处理强制登出
+   */
+  const handleForceLogout = async (): Promise<void> => {
+    try {
+      // 导入 authStore (避免循环依赖,在函数内部导入)
+      const { useAuthStore } = await import('./auth')
+      const authStore = useAuthStore()
+
+      // 断开 SignalR 连接
+      await disconnect()
+
+      // 执行登出
+      authStore.logout()
+
+      // 跳转到登录页,并传递提示信息
+      await router.push({
+        path: '/login',
+        query: { reason: 'force_logout', message: '您已被管理员强制下线' },
+      })
+    } catch (err) {
+      console.error('[OnlineUser] 强制登出失败', err)
     }
   }
 
@@ -83,13 +124,9 @@ export const useOnlineUserStore = defineStore('onlineUser', () => {
   /**
    * 获取在线用户列表
    */
-  const fetchOnlineUsers = async (params?: {
-    pageNumber?: number
-    pageSize?: number
-    status?: string
-    userId?: string
-    room?: string
-  }): Promise<OnlineUserListResponseDto> => {
+  const fetchOnlineUsers = async (
+    params?: OnlineUserQueryParams,
+  ): Promise<OnlineUserListResponseDto> => {
     try {
       loading.value = true
       error.value = null

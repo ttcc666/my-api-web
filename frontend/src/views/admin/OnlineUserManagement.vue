@@ -157,15 +157,20 @@
               {{ formatDateTime(record.lastHeartbeatAt) }}
             </template>
             <template v-else-if="column.key === 'actions'">
-              <a-button
-                type="link"
-                danger
-                size="small"
-                :disabled="record.status !== 'Online'"
-                @click="handleForceDisconnectClick(record)"
-              >
-                强制下线
-              </a-button>
+              <a-space>
+                <a-button
+                  type="link"
+                  danger
+                  size="small"
+                  :disabled="record.status !== 'Online' || isCurrentUserConnection(record.userId)"
+                  @click="handleForceDisconnectClick(record)"
+                >
+                  强制下线
+                </a-button>
+                <a-tooltip v-if="isCurrentUserConnection(record.userId)" title="不能踢自己下线">
+                  <QuestionCircleOutlined style="color: #faad14" />
+                </a-tooltip>
+              </a-space>
             </template>
           </template>
         </a-table>
@@ -198,10 +203,12 @@ import {
   LinkOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
+  QuestionCircleOutlined,
 } from '@ant-design/icons-vue'
 import type { TableProps } from 'ant-design-vue'
 import { useOnlineUsers } from '@/composables/useOnlineUsers'
 import { usePermissionStore } from '@/stores/permission'
+import { useUserStore } from '@/stores/user'
 import type { OnlineUserDto, OnlineUserStatus } from '@/types/api'
 import { message, modal } from '@/plugins/antd'
 
@@ -219,6 +226,7 @@ const {
   pagination,
   autoRefreshEnabled,
   refreshInterval,
+  connectionId,
   loadOnlineUsers,
   loadStatistics,
   refreshAll,
@@ -237,6 +245,10 @@ const {
 // 权限检查
 const permissionStore = usePermissionStore()
 const hasAdminPermission = computed(() => permissionStore.hasRole('Admin'))
+
+// 获取当前用户信息
+const userStore = useUserStore()
+const currentUserId = computed(() => userStore.user?.id)
 
 // 筛选条件
 const filterStatus = ref<OnlineUserStatus | undefined>()
@@ -335,6 +347,11 @@ const formatDateTime = (dateString: string): string => {
   })
 }
 
+// 检查是否是当前用户的连接
+const isCurrentUserConnection = (targetUserId: string): boolean => {
+  return currentUserId.value === targetUserId
+}
+
 // 刷新数据
 const handleRefresh = async (): Promise<void> => {
   await refreshAll()
@@ -372,6 +389,12 @@ const handleIntervalChange = (value: number): void => {
 
 // 处理强制下线点击
 const handleForceDisconnectClick = (user: OnlineUserDto): void => {
+  // 双重检查:防止踢自己下线
+  if (isCurrentUserConnection(user.userId)) {
+    message.warning('不能踢自己下线')
+    return
+  }
+
   selectedUser.value = user
   disconnectReason.value = ''
   showDisconnectModal.value = true

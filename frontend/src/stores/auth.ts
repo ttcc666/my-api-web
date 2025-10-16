@@ -132,6 +132,7 @@ export const useAuthStore = defineStore(
       const userStore = useUserStore()
       const permissionStore = usePermissionStore()
       const menuStore = useMenuStore()
+      const onlineUserStore = useOnlineUserStore()
       const { user } = storeToRefs(userStore)
 
       if (!user.value) {
@@ -144,6 +145,15 @@ export const useAuthStore = defineStore(
         await menuStore.loadMenus()
       } catch (err) {
         console.error('初始化菜单失败:', err)
+      }
+
+      // 建立 SignalR 连接(用于自动登录场景)
+      try {
+        await onlineUserStore.initConnection(() => token.value || '')
+        console.log('[Auth] 自动登录后 SignalR 连接已建立')
+      } catch (err) {
+        console.error('[Auth] 建立 SignalR 连接失败:', err)
+        // 不影响初始化流程,继续
       }
     }
 

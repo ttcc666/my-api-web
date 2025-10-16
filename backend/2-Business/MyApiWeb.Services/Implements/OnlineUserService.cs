@@ -311,5 +311,74 @@ namespace MyApiWeb.Services.Implements
                 .Distinct()
                 .CountAsync();
         }
+
+        /// <summary>
+        /// 清除所有在线用户数据
+        /// 通常在应用启动时调用，清理上次运行的残留数据
+        /// </summary>
+        public async Task<int> ClearAllOnlineUsersAsync()
+        {
+            var result = await _dbContext.Db.Updateable<OnlineUser>()
+                .SetColumns(u => new OnlineUser
+                {
+                    Status = "Offline",
+                    DisconnectedAt = DateTimeOffset.Now
+                })
+                .Where(u => u.Status == "Online" || u.Status == "Idle")
+                .ExecuteCommandAsync();
+
+            if (result > 0)
+            {
+                _logger.LogWarning("应用启动时清除了 {Count} 个在线用户记录", result);
+            }
+            else
+            {
+                _logger.LogInformation("应用启动时无需清除在线用户记录");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除指定用户的旧连接记录(物理删除)
+        /// 用于清理用户刷新浏览器后产生的旧连接记录
+        /// 使用设备指纹(IP + UserAgent)识别同一设备,只删除同一设备的旧连接
+        /// </summary>
+        public async Task<int> DeleteUserOldConnectionsAsync(
+            string userId,
+            string currentConnectionId,
+            string? ipAddress,
+            string? userAgent)
+        {
+            // 构建查询:删除相同用户、相同设备指纹、但不是当前连接的记录
+            var query = _dbContext.Db.Deleteable<OnlineUser>()
+                .Where(u => u.UserId == userId && u.ConnectionId != currentConnectionId);
+
+            // 使用设备指纹匹配:IP地址和UserAgent都相同才认为是同一设备
+            if (!string.IsNullOrWhiteSpace(ipAddress))
+            {
+                query = query.Where(u => u.IpAddress == ipAddress);
+            }
+
+            if (!string.IsNullOrWhiteSpace(userAgent))
+            {
+                query = query.Where(u => u.UserAgent == userAgent);
+            }
+
+            var result = await query.ExecuteCommandAsync();
+
+            if (result > 0)
+            {
+                var userAgentPreview = !string.IsNullOrWhiteSpace(userAgent) && userAgent.Length > 50
+                    ? userAgent.Substring(0, 50) + "..."
+                    : userAgent;
+
+                _logger.LogInformation(
+                    "已删除用户在同一设备的 {Count} 个旧连接记录: UserId={UserId}, IP={IpAddress}, UA={UserAgent}",
+                    result, userId, ipAddress, userAgentPreview);
+            }
+
+            return result;
+        }
     }
 }

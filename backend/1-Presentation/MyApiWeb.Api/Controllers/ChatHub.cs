@@ -204,5 +204,29 @@ namespace MyApiWeb.Api.Controllers
                 serverTime = DateTimeOffset.UtcNow
             };
         }
+
+        /// <summary>
+        /// 用户主动退出登录
+        /// 客户端在退出登录前应调用此方法,以立即标记为离线
+        /// </summary>
+        public async Task Logout()
+        {
+            var userId = Context.UserIdentifier;
+
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                _logger.LogInformation("用户主动退出登录: UserId={UserId}, ConnectionId={ConnectionId}", userId, Context.ConnectionId);
+
+                // 发布用户下线事件,明确标记为"主动退出"
+                await _capPublisher.PublishAsync("user.connection.event", new UserConnectionEvent
+                {
+                    EventType = ConnectionEventType.Disconnected,
+                    ConnectionId = Context.ConnectionId,
+                    UserId = userId,
+                    Timestamp = DateTimeOffset.Now,
+                    DisconnectReason = "Logout" // 标记为主动退出
+                });
+            }
+        }
     }
 }

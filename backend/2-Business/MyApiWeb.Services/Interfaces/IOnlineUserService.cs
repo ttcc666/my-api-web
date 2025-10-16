@@ -96,5 +96,28 @@ namespace MyApiWeb.Services.Interfaces
         /// </summary>
         /// <returns>在线用户数量</returns>
         Task<int> GetOnlineUserCountAsync();
+
+        /// <summary>
+        /// 清除所有在线用户数据
+        /// 通常在应用启动时调用，清理上次运行的残留数据
+        /// </summary>
+        /// <returns>清理的记录数量</returns>
+        Task<int> ClearAllOnlineUsersAsync();
+
+        /// <summary>
+        /// 删除指定用户的旧连接记录(物理删除)
+        /// 用于清理用户刷新浏览器后产生的旧连接记录
+        /// 使用设备指纹(IP + UserAgent)识别同一设备,只删除同一设备的旧连接
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="currentConnectionId">当前活跃的连接ID(不删除此连接)</param>
+        /// <param name="ipAddress">当前连接的IP地址</param>
+        /// <param name="userAgent">当前连接的UserAgent</param>
+        /// <returns>删除的记录数量</returns>
+        Task<int> DeleteUserOldConnectionsAsync(
+            string userId,
+            string currentConnectionId,
+            string? ipAddress,
+            string? userAgent);
     }
 }

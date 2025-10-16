@@ -120,12 +120,12 @@ namespace MyApiWeb.Api.Controllers
 
         /// <summary>
         /// 强制下线指定连接
-        /// 需要管理员权限
         /// </summary>
         /// <param name="connectionId">连接ID</param>
+        /// <param name="reason">下线原因(可选)</param>
         /// <returns>操作结果</returns>
         [HttpDelete("{connectionId}")]
-        public async Task<IActionResult> ForceDisconnect(string connectionId)
+        public async Task<IActionResult> ForceDisconnect(string connectionId, [FromQuery] string? reason = null)
         {
             try
             {
@@ -133,7 +133,19 @@ namespace MyApiWeb.Api.Controllers
                 var onlineUser = await _onlineUserService.GetByConnectionIdAsync(connectionId);
                 if (onlineUser == null)
                 {
-                    return NotFound("连接不存在或已下线");
+                    return Error("连接不存在或已下线");
+                }
+
+                // 获取当前用户ID
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                // 检查是否尝试踢自己下线
+                if (!string.IsNullOrEmpty(currentUserId) && currentUserId == onlineUser.UserId)
+                {
+                    _logger.LogWarning(
+                        "用户尝试踢自己下线: UserId={UserId}, ConnectionId={ConnectionId}",
+                        currentUserId, connectionId);
+                    return Error("不能踢自己下线");
                 }
 
                 // 更新数据库状态
@@ -144,13 +156,13 @@ namespace MyApiWeb.Api.Controllers
                     // 通知客户端强制断开
                     await _hubContext.Clients.Client(connectionId).SendAsync("forceDisconnect", new
                     {
-                        reason = "管理员强制下线",
+                        reason = reason ?? "管理员强制下线",
                         timestamp = DateTimeOffset.Now
                     });
 
                     _logger.LogWarning(
-                        "管理员强制下线用户: ConnectionId={ConnectionId}, UserId={UserId}",
-                        connectionId, onlineUser.UserId);
+                        "管理员强制下线用户: Operator={Operator}, ConnectionId={ConnectionId}, UserId={UserId}, Reason={Reason}",
+                        currentUserId, connectionId, onlineUser.UserId, reason ?? "无");
 
                     return Success<object?>(null, "强制下线成功");
                 }
@@ -166,12 +178,10 @@ namespace MyApiWeb.Api.Controllers
 
         /// <summary>
         /// 手动触发清理超时连接
-        /// 需要管理员权限
         /// </summary>
         /// <param name="timeoutMinutes">超时分钟数 (默认: 15)</param>
         /// <returns>清理的记录数量</returns>
         [HttpPost("cleanup")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CleanupTimeoutConnections([FromQuery] int timeoutMinutes = 15)
         {
             try

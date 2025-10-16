@@ -42,7 +42,7 @@ export class OnlineUsersApi {
   }
 
   /**
-   * 强制下线指定连接 (需要 Admin 角色)
+   * 强制下线指定连接
    */
   static async forceDisconnect(connectionId: string, reason?: string): Promise<void> {
     return apiClient.delete(`/online-users/${connectionId}`, {
@@ -51,7 +51,7 @@ export class OnlineUsersApi {
   }
 
   /**
-   * 手动清理超时连接 (需要 Admin 角色)
+   * 手动清理超时连接
    */
   static async cleanup(timeoutMinutes?: number): Promise<{ cleanedCount: number }> {
     return apiClient.post('/online-users/cleanup', null, {

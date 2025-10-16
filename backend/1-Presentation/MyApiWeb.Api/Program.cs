@@ -2,6 +2,7 @@ using Autofac;
 using MyApiWeb.Api.Controllers;
 using MyApiWeb.Infrastructure.Configuration;
 using MyApiWeb.Infrastructure.Data;
+using MyApiWeb.Services.Interfaces;
 using Serilog;
 
 try
@@ -78,6 +79,9 @@ try
     // 初始化数据种子
     DataSeeder.Seed(app);
 
+    // 清除应用重启前的在线用户数据
+    await ClearOnlineUsersOnStartup(app);
+
     Log.Information("应用程序启动完成");
     app.Run();
 }
@@ -88,4 +92,32 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+/// <summary>
+/// 清除应用启动前的在线用户数据
+/// </summary>
+static async Task ClearOnlineUsersOnStartup(WebApplication app)
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var onlineUserService = scope.ServiceProvider.GetRequiredService<IOnlineUserService>();
+
+        Log.Information("开始清除应用重启前的在线用户数据...");
+        var count = await onlineUserService.ClearAllOnlineUsersAsync();
+
+        if (count > 0)
+        {
+            Log.Warning("已清除 {Count} 个在线用户记录", count);
+        }
+        else
+        {
+            Log.Information("无需清除在线用户记录");
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "清除在线用户数据失败");
+    }
 }
