@@ -164,7 +164,7 @@ export class SignalRService {
 
   /**
    * 监听服务器推送的强制下线事件
-   * 注意：SignalR 事件名称不区分大小写，统一使用小写
+   * SignalR 事件名称需与后端严格匹配（PascalCase）
    */
   onForceDisconnect(callback: (data: { reason: string; timestamp: string }) => void): void {
     if (!this.connection) {
@@ -172,9 +172,9 @@ export class SignalRService {
       return
     }
 
-    // 使用小写事件名称，因为 SignalR 默认将事件名转换为小写
-    this.connection.on('forcedisconnect', callback)
-    console.log('[SignalR] 已注册 forcedisconnect 事件监听器')
+    // 使用 PascalCase 事件名称，与后端保持一致
+    this.connection.on('ForceDisconnect', callback)
+    console.log('[SignalR] 已注册 ForceDisconnect 事件监听器')
   }
 
   /**
@@ -186,9 +186,9 @@ export class SignalRService {
     }
 
     if (callback) {
-      this.connection.off('forcedisconnect', callback)
+      this.connection.off('ForceDisconnect', callback)
     } else {
-      this.connection.off('forcedisconnect')
+      this.connection.off('ForceDisconnect')
     }
   }
 

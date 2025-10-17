@@ -154,7 +154,7 @@ namespace MyApiWeb.Api.Controllers
                 if (success)
                 {
                     // 通知客户端强制断开
-                    await _hubContext.Clients.Client(connectionId).SendAsync("forceDisconnect", new
+                    await _hubContext.Clients.Client(connectionId).SendAsync("ForceDisconnect", new
                     {
                         reason = reason ?? "管理员强制下线",
                         timestamp = DateTimeOffset.Now
