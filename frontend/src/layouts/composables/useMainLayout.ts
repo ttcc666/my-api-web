@@ -58,21 +58,9 @@ export function useMainLayout() {
   })
 
   watch(
-    () => selectedMenuKeys.value[0],
-    (activeKey) => {
-      if (!activeKey || collapsed.value) {
-        return
-      }
-      const map = menuKeyParentMap.value
-      const ancestors: string[] = []
-      let current = activeKey
-      while (map.has(current)) {
-        const parent = map.get(current)
-        if (!parent) break
-        ancestors.unshift(parent)
-        current = parent
-      }
-      openMenuKeys.value = ancestors
+    [() => selectedMenuKeys.value[0], () => menuKeyParentMap.value],
+    ([activeKey]) => {
+      syncOpenMenuState(activeKey)
     },
     { immediate: true },
   )
@@ -168,18 +156,7 @@ export function useMainLayout() {
     collapsed.value = value
     localStorage.setItem('menu-collapsed', String(value))
     if (!value) {
-      const activeKey = selectedMenuKeys.value[0]
-      if (!activeKey) return
-      const map = menuKeyParentMap.value
-      const ancestors: string[] = []
-      let current = activeKey
-      while (map.has(current)) {
-        const parent = map.get(current)
-        if (!parent) break
-        ancestors.unshift(parent)
-        current = parent
-      }
-      openMenuKeys.value = ancestors
+      syncOpenMenuState(selectedMenuKeys.value[0])
     }
   }
 
@@ -195,6 +172,29 @@ export function useMainLayout() {
     const menu = findMenuByKey(menuList.value, key)
     if (menu?.routeName) router.push({ name: menu.routeName })
     else if (menu?.routePath) router.push(menu.routePath)
+  }
+
+  function collectAncestorKeys(key: string): string[] {
+    const map = menuKeyParentMap.value
+    const ancestors: string[] = []
+    let current = key
+    while (map.has(current)) {
+      const parent = map.get(current)
+      if (!parent) break
+      ancestors.unshift(parent)
+      current = parent
+    }
+    return ancestors
+  }
+
+  function syncOpenMenuState(explicitKey?: string | null) {
+    if (collapsed.value) return
+    const activeKey = explicitKey ?? selectedMenuKeys.value[0]
+    if (!activeKey) {
+      openMenuKeys.value = []
+      return
+    }
+    openMenuKeys.value = collectAncestorKeys(activeKey)
   }
 
   function findMenuByKey(menus: MenuDto[], key: string): MenuDto | null {
