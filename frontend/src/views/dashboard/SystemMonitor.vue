@@ -220,8 +220,6 @@ const {
   loading,
   error,
   historyData,
-  autoRefresh,
-  refreshInterval,
   fetchDeviceInfo,
   startAutoRefresh,
   stopAutoRefresh,

@@ -30,7 +30,7 @@ import { reactive, ref } from 'vue'
 import type { FormInstance } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/modules/auth/auth'
-import { message } from '@/plugins/antd'
+import { useFeedback } from '@/composables/useFeedback'
 
 defineOptions({
   name: 'UserRegister',
@@ -71,6 +71,7 @@ const rules = {
 const authStore = useAuthStore()
 const router = useRouter()
 const loading = ref(false)
+const { message: feedbackMessage } = useFeedback()
 
 async function handleRegister(event: MouseEvent) {
   event.preventDefault()
@@ -89,10 +90,10 @@ async function handleRegister(event: MouseEvent) {
   loading.value = false
 
   if (success) {
-    message.success('注册成功，请登录')
+    feedbackMessage.success('注册成功，请登录')
     router.push('/login')
   } else {
-    message.error(authStore.error || '注册失败')
+    feedbackMessage.error(authStore.error || '注册失败')
   }
 }
 </script>

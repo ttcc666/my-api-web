@@ -210,7 +210,7 @@ import { useOnlineUsers } from '@/composables/useOnlineUsers'
 import { usePermissionStore } from '@/stores/modules/system/permission'
 import { useUserStore } from '@/stores/modules/system/user'
 import type { OnlineUserDto, OnlineUserStatus } from '@/types/api'
-import { message, modal } from '@/plugins/antd'
+import { useFeedback } from '@/composables/useFeedback'
 
 defineOptions({
   name: 'OnlineUserManagement',
@@ -225,10 +225,6 @@ const {
   error,
   pagination,
   autoRefreshEnabled,
-  refreshInterval,
-  connectionId,
-  loadOnlineUsers,
-  loadStatistics,
   refreshAll,
   handlePageChange,
   handleFilterChange: applyFilters,
@@ -269,6 +265,7 @@ const showDisconnectModal = ref(false)
 const selectedUser = ref<OnlineUserDto | null>(null)
 const disconnectReason = ref('')
 const disconnecting = ref(false)
+const { message: feedbackMessage, confirm } = useFeedback()
 
 // 表格列定义
 const columns: TableProps['columns'] = [
@@ -391,7 +388,7 @@ const handleIntervalChange = (value: number): void => {
 const handleForceDisconnectClick = (user: OnlineUserDto): void => {
   // 双重检查:防止踢自己下线
   if (isCurrentUserConnection(user.userId)) {
-    message.warning('不能踢自己下线')
+    feedbackMessage.warning('不能踢自己下线')
     return
   }
 
@@ -420,7 +417,7 @@ const handleForceDisconnectConfirm = async (): Promise<void> => {
 
 // 处理清理超时连接点击
 const handleCleanupClick = (): void => {
-  modal.confirm({
+  confirm({
     title: '清理超时连接',
     content: '确定要清理所有超时连接吗?这将断开15分钟内未发送心跳的连接。',
     onOk: async () => {

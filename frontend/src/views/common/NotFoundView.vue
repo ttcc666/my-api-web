@@ -1,11 +1,7 @@
 <template>
   <div class="error-container">
     <a-card class="error-card" title="404 - 页面未找到">
-      <a-result
-        status="404"
-        title="404 Not Found"
-        sub-title="抱歉，您访问的页面不存在。"
-      >
+      <a-result status="404" title="404 Not Found" sub-title="抱歉，您访问的页面不存在。">
         <template #extra>
           <a-button type="primary" @click="goHome">返回首页</a-button>
         </template>

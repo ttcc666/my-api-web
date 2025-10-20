@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import type { UserPermissionInfoDto } from '@/types/api'
 import { AuthApi } from '@/api'
 import { cacheConfig } from '@/config'
+import { createAsyncCacheLoader } from '@/utils/asyncCacheLoader'
 
 type UserPermissionInfo = UserPermissionInfoDto
 
@@ -18,8 +19,6 @@ export const usePermissionStore = defineStore(
     const loading = ref(false)
     const error = ref<string | null>(null)
     const lastLoadedAt = ref<number | null>(null)
-
-    let loadPromise: Promise<void> | null = null
 
     const hasPermission = computed(() => (permission: string) => {
       return permissions.value.includes(permission)
@@ -37,69 +36,59 @@ export const usePermissionStore = defineStore(
       return permissionList.every((permission) => permissions.value.includes(permission))
     })
 
-    const isCacheValid = () => {
-      if (!permissionsLoaded.value || !lastLoadedAt.value) {
-        return false
-      }
-      return Date.now() - lastLoadedAt.value < PERMISSIONS_TTL
-    }
-
     const setUserPermissions = (permissionInfo: UserPermissionInfo) => {
       if (!permissionInfo) return
       userPermissions.value = permissionInfo
       permissions.value = (permissionInfo.effectivePermissions || []).map((p) => p.name)
       roles.value = (permissionInfo.roles || []).map((r) => r.name)
-      permissionsLoaded.value = true
-      lastLoadedAt.value = Date.now()
       error.value = null
     }
 
-    const clearUserPermissions = () => {
+    const resetPermissionsState = () => {
       userPermissions.value = null
       permissions.value = []
       roles.value = []
-      permissionsLoaded.value = false
-      lastLoadedAt.value = null
       error.value = null
     }
 
+    const loader = createAsyncCacheLoader<UserPermissionInfo | null>({
+      ttl: PERMISSIONS_TTL,
+      lastLoadedAt,
+      loading,
+      isDataReady: () => permissionsLoaded.value,
+      fetcher: async () => {
+        return AuthApi.getCurrentUserPermissions()
+      },
+      onSuccess: (permissionInfo) => {
+        if (permissionInfo) {
+          setUserPermissions(permissionInfo)
+        } else {
+          resetPermissionsState()
+        }
+      },
+      onError: (err) => {
+        console.error('加载用户权限失败:', err)
+        error.value = '加载用户权限失败'
+        permissionsLoaded.value = false
+        lastLoadedAt.value = null
+      },
+      markLoaded: (value) => {
+        permissionsLoaded.value = value && userPermissions.value !== null
+      },
+    })
+
+    const clearUserPermissions = () => {
+      resetPermissionsState()
+      permissionsLoaded.value = false
+      lastLoadedAt.value = null
+      loader.invalidate()
+    }
+
     const loadUserPermissions = async (forceRefresh = false) => {
-      if (!forceRefresh && isCacheValid()) {
-        return
-      }
-
-      if (loadPromise && !forceRefresh) {
-        return loadPromise
-      }
-
       if (forceRefresh) {
         clearUserPermissions()
-        loadPromise = null
       }
-
-      loadPromise = (async () => {
-        try {
-          loading.value = true
-          error.value = null
-          const permissionInfo = await AuthApi.getCurrentUserPermissions()
-          if (permissionInfo) {
-            setUserPermissions(permissionInfo)
-          } else {
-            clearUserPermissions()
-          }
-        } catch (err) {
-          console.error('加载用户权限失败:', err)
-          error.value = '加载用户权限失败'
-          permissionsLoaded.value = false
-          lastLoadedAt.value = null
-          throw err
-        } finally {
-          loading.value = false
-          loadPromise = null
-        }
-      })()
-
-      return loadPromise
+      await loader.load(forceRefresh)
     }
 
     return {

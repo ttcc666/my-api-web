@@ -1,4 +1,3 @@
-
 <template>
   <div class="menu-management">
     <div class="menu-management__header">
@@ -150,7 +149,7 @@ import type { FormInstance } from 'ant-design-vue'
 import { MenuType, type MenuDto, type CreateMenuDto, type UpdateMenuDto } from '@/types/api'
 import { useMenuManagement } from '@/composables/useMenuManagement'
 import IconPicker from '@/components/IconPicker.vue'
-import { message, modal } from '@/plugins/antd'
+import { useFeedback } from '@/composables/useFeedback'
 
 interface MenuForm {
   id: string | null
@@ -191,6 +190,7 @@ const tableData = computed(() => menuTree.value)
 const modalMode = ref<'create' | 'edit'>('create')
 const showModal = ref(false)
 const submitLoading = ref(false)
+const { message: feedbackMessage, confirm } = useFeedback()
 
 const formRef = ref<FormInstance>()
 const form = ref<MenuForm>({
@@ -249,7 +249,7 @@ const columns: ColumnsType<MenuDto> = [
 
 watch(error, (err) => {
   if (err) {
-    message.error(err)
+    feedbackMessage.error(err)
   }
 })
 
@@ -315,16 +315,16 @@ function handleEdit(menu: MenuDto) {
 }
 
 function handleDelete(menu: MenuDto) {
-  modal.confirm({
+  confirm({
     title: '删除菜单',
     content: `确定删除菜单「${menu.title}」吗？`,
     okType: 'danger',
     onOk: async () => {
       try {
         await deleteMenu(menu.id)
-        message.success('删除成功')
+        feedbackMessage.success('删除成功')
       } catch (err) {
-        message.error(err instanceof Error ? err.message : '删除失败')
+        feedbackMessage.error(err instanceof Error ? err.message : '删除失败')
       }
     },
   })
@@ -333,9 +333,9 @@ function handleDelete(menu: MenuDto) {
 async function handleRefresh() {
   try {
     await fetchMenuTree()
-    message.success('刷新成功')
+    feedbackMessage.success('刷新成功')
   } catch (err) {
-    message.error(err instanceof Error ? err.message : '刷新失败')
+    feedbackMessage.error(err instanceof Error ? err.message : '刷新失败')
   }
 }
 
@@ -368,17 +368,17 @@ async function handleSubmit() {
         ...payloadBase,
       }
       await createMenu(payload)
-      message.success('创建成功')
+      feedbackMessage.success('创建成功')
     } else if (form.value.id) {
       const payload: UpdateMenuDto = {
         ...payloadBase,
       }
       await updateMenu(form.value.id, payload)
-      message.success('更新成功')
+      feedbackMessage.success('更新成功')
     }
     showModal.value = false
   } catch (err) {
-    message.error(err instanceof Error ? err.message : '保存失败')
+    feedbackMessage.error(err instanceof Error ? err.message : '保存失败')
   } finally {
     submitLoading.value = false
   }

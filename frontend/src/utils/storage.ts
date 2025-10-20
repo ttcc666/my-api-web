@@ -26,13 +26,10 @@ class CryptoService {
     )
 
     try {
-      this.key = await crypto.subtle.importKey(
-        'raw',
-        keyMaterial,
-        this.algorithm,
-        false,
-        ['encrypt', 'decrypt'],
-      )
+      this.key = await crypto.subtle.importKey('raw', keyMaterial, this.algorithm, false, [
+        'encrypt',
+        'decrypt',
+      ])
     } catch (error) {
       console.warn('加密密钥初始化失败，将使用明文存储:', error)
     }

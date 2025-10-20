@@ -1,10 +1,11 @@
 import { ref } from 'vue'
 import { PermissionsApi } from '@/api'
 import type { PermissionDto } from '@/types/api'
-import { message } from '@/plugins/antd'
+import { useFeedback } from '@/composables/useFeedback'
 
 export function usePermissions() {
   const permissions = ref<PermissionDto[]>([])
+  const { message: feedbackMessage } = useFeedback()
 
   async function fetchPermissions() {
     try {
@@ -12,7 +13,7 @@ export function usePermissions() {
       permissions.value = Array.isArray(permissionList) ? permissionList : []
     } catch (error) {
       console.error('获取权限列表失败:', error)
-      message.error('获取权限列表失败')
+      feedbackMessage.error('获取权限列表失败')
     }
   }
 

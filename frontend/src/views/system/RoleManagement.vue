@@ -1,4 +1,3 @@
-
 <template>
   <div class="role-management">
     <div class="role-management__header">
@@ -77,7 +76,7 @@ import { computed, onMounted, ref } from 'vue'
 import type { ColumnsType } from 'ant-design-vue/es/table'
 import type { FormInstance } from 'ant-design-vue'
 import { RolesApi, PermissionsApi } from '@/api'
-import { message, modal } from '@/plugins/antd'
+import { useFeedback } from '@/composables/useFeedback'
 import type { RoleDto, PermissionDto, CreateRoleDto, UpdateRoleDto } from '@/types/api'
 
 type Role = RoleDto
@@ -90,6 +89,7 @@ const showModal = ref(false)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 const formRef = ref<FormInstance>()
+const { message: feedbackMessage, confirm } = useFeedback()
 
 const defaultRole = (): Role & { permissionIds: string[] } => ({
   id: '',
@@ -158,7 +158,7 @@ async function fetchRoles() {
     roles.value = Array.isArray(roleList) ? roleList : []
   } catch (error) {
     console.error('获取角色列表失败:', error)
-    message.error('获取角色列表失败')
+    feedbackMessage.error('获取角色列表失败')
   } finally {
     loading.value = false
   }
@@ -170,7 +170,7 @@ async function fetchAllPermissions() {
     permissions.value = Array.isArray(permissionList) ? permissionList : []
   } catch (error) {
     console.error('获取权限列表失败:', error)
-    message.error('获取权限列表失败')
+    feedbackMessage.error('获取权限列表失败')
   }
 }
 
@@ -190,18 +190,18 @@ function handleEdit(role: Role) {
 }
 
 function handleDelete(role: Role) {
-  modal.confirm({
+  confirm({
     title: '删除角色',
     content: `确定要删除角色「${role.name}」吗？`,
     okType: 'danger',
     onOk: async () => {
       try {
         await RolesApi.deleteRole(role.id)
-        message.success('删除成功')
+        feedbackMessage.success('删除成功')
         await fetchRoles()
       } catch (error) {
         console.error('删除失败:', error)
-        message.error('删除失败')
+        feedbackMessage.error('删除失败')
       }
     },
   })
@@ -227,7 +227,7 @@ async function handleSubmit() {
       await RolesApi.assignRolePermissions(currentRole.value.id, {
         permissionIds: currentRole.value.permissionIds,
       })
-      message.success('更新成功')
+      feedbackMessage.success('更新成功')
     } else {
       const createData: CreateRoleDto = {
         name: currentRole.value.name,
@@ -236,13 +236,13 @@ async function handleSubmit() {
         permissionIds: currentRole.value.permissionIds,
       }
       await RolesApi.createRole(createData)
-      message.success('创建成功')
+      feedbackMessage.success('创建成功')
     }
     showModal.value = false
     await fetchRoles()
   } catch (error) {
     console.error(isEdit.value ? '更新失败:' : '创建失败:', error)
-    message.error(isEdit.value ? '更新失败' : '创建失败')
+    feedbackMessage.error(isEdit.value ? '更新失败' : '创建失败')
   } finally {
     submitLoading.value = false
   }

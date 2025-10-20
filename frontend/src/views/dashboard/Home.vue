@@ -4,9 +4,7 @@
       <div class="welcome-header">
         <div class="welcome-text">
           <h1>欢迎回来！</h1>
-          <p class="welcome-subtitle">
-            这是一个基于 .NET 9 和 Vue 3 的现代化前后端分离 Web 应用。
-          </p>
+          <p class="welcome-subtitle">这是一个基于 .NET 9 和 Vue 3 的现代化前后端分离 Web 应用。</p>
           <p class="welcome-helper">您可以通过下方的快捷操作开始使用系统功能。</p>
         </div>
         <a-tag color="success">在线</a-tag>

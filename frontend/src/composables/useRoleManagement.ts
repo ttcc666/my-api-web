@@ -1,11 +1,12 @@
 import { ref } from 'vue'
 import { RolesApi } from '@/api'
 import type { RoleDto, CreateRoleDto, UpdateRoleDto } from '@/types/api'
-import { message } from '@/plugins/antd'
+import { useFeedback } from '@/composables/useFeedback'
 
 export function useRoleManagement() {
   const loading = ref(false)
   const roles = ref<RoleDto[]>([])
+  const { message: feedbackMessage } = useFeedback()
 
   async function fetchRoles() {
     try {
@@ -14,7 +15,7 @@ export function useRoleManagement() {
       roles.value = Array.isArray(roleList) ? roleList : []
     } catch (error) {
       console.error('获取角色列表失败:', error)
-      message.error('获取角色列表失败')
+      feedbackMessage.error('获取角色列表失败')
     } finally {
       loading.value = false
     }
@@ -23,12 +24,12 @@ export function useRoleManagement() {
   async function createRole(roleData: CreateRoleDto): Promise<boolean> {
     try {
       await RolesApi.createRole(roleData)
-      message.success('创建成功')
+      feedbackMessage.success('创建成功')
       await fetchRoles()
       return true
     } catch (error) {
       console.error('创建失败:', error)
-      message.error('创建失败')
+      feedbackMessage.error('创建失败')
       return false
     }
   }
@@ -36,12 +37,12 @@ export function useRoleManagement() {
   async function updateRole(id: string, roleData: UpdateRoleDto): Promise<boolean> {
     try {
       await RolesApi.updateRole(id, roleData)
-      message.success('更新成功')
+      feedbackMessage.success('更新成功')
       await fetchRoles()
       return true
     } catch (error) {
       console.error('更新失败:', error)
-      message.error('更新失败')
+      feedbackMessage.error('更新失败')
       return false
     }
   }
@@ -49,12 +50,12 @@ export function useRoleManagement() {
   async function deleteRole(id: string): Promise<boolean> {
     try {
       await RolesApi.deleteRole(id)
-      message.success('删除成功')
+      feedbackMessage.success('删除成功')
       await fetchRoles()
       return true
     } catch (error) {
       console.error('删除失败:', error)
-      message.error('删除失败')
+      feedbackMessage.error('删除失败')
       return false
     }
   }

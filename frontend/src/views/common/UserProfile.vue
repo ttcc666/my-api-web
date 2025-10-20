@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useUserStore } from '@/stores/modules/system/user'
 import { UsersApi } from '@/api'
-import { message } from '@/plugins/antd'
+import { useFeedback } from '@/composables/useFeedback'
 import type { ChangePasswordDto, UserUpdateDto } from '@/types/api'
 
 const userStore = useUserStore()
@@ -30,6 +30,7 @@ const passwordForm = ref<PasswordForm>({
 })
 
 const passwordLoading = ref(false)
+const { message: feedbackMessage } = useFeedback()
 
 function handleEdit() {
   formData.value = {
@@ -64,11 +65,11 @@ async function handleSave() {
 
     await UsersApi.updateUser(user.value.id, payload)
     await userStore.fetchUserInfo()
-    message.success('更新成功')
+    feedbackMessage.success('更新成功')
     editMode.value = false
   } catch (error) {
     console.error('更新用户信息失败:', error)
-    message.error('更新失败')
+    feedbackMessage.error('更新失败')
   } finally {
     loading.value = false
   }
@@ -80,22 +81,22 @@ async function handlePasswordChange() {
   }
 
   if (!passwordForm.value.currentPassword || !passwordForm.value.newPassword) {
-    message.error('请输入当前密码和新密码')
+    feedbackMessage.error('请输入当前密码和新密码')
     return
   }
 
   if (passwordForm.value.newPassword.length < 6) {
-    message.error('新密码长度至少为 6 位')
+    feedbackMessage.error('新密码长度至少为 6 位')
     return
   }
 
   if (passwordForm.value.newPassword === passwordForm.value.currentPassword) {
-    message.error('新密码不能与当前密码相同')
+    feedbackMessage.error('新密码不能与当前密码相同')
     return
   }
 
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    message.error('两次输入的新密码不一致')
+    feedbackMessage.error('两次输入的新密码不一致')
     return
   }
 
@@ -107,7 +108,7 @@ async function handlePasswordChange() {
   passwordLoading.value = true
   try {
     await UsersApi.changePassword(user.value.id, payload)
-    message.success('密码修改成功')
+    feedbackMessage.success('密码修改成功')
     passwordForm.value = {
       currentPassword: '',
       newPassword: '',
@@ -117,7 +118,7 @@ async function handlePasswordChange() {
     const errorMessage =
       (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
       '修改密码失败'
-    message.error(errorMessage)
+    feedbackMessage.error(errorMessage)
   } finally {
     passwordLoading.value = false
   }

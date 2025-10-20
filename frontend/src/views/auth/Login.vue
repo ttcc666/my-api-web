@@ -22,7 +22,7 @@ import { reactive, ref } from 'vue'
 import type { FormInstance } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/modules/auth/auth'
-import { message } from '@/plugins/antd'
+import { useFeedback } from '@/composables/useFeedback'
 
 defineOptions({
   name: 'UserLogin',
@@ -42,6 +42,7 @@ const rules = {
 const authStore = useAuthStore()
 const router = useRouter()
 const loading = ref(false)
+const { message: feedbackMessage } = useFeedback()
 
 async function handleLogin(event: MouseEvent) {
   event.preventDefault()
@@ -59,10 +60,10 @@ async function handleLogin(event: MouseEvent) {
   loading.value = false
 
   if (success) {
-    message.success('登录成功')
+    feedbackMessage.success('登录成功')
     router.push('/')
   } else {
-    message.error(authStore.error || '登录失败')
+    feedbackMessage.error(authStore.error || '登录失败')
   }
 }
 </script>

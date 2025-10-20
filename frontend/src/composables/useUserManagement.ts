@@ -6,7 +6,7 @@ import type {
   AssignUserPermissionsDto,
   UserPermissionInfoDto,
 } from '@/types/api'
-import { message } from '@/plugins/antd'
+import { useFeedback } from '@/composables/useFeedback'
 
 export interface UserWithRolesAndPermissions extends UserDto {
   roleIds: string[]
@@ -18,6 +18,7 @@ export interface UserWithRolesAndPermissions extends UserDto {
 export function useUserManagement() {
   const loading = ref(false)
   const users = ref<UserWithRolesAndPermissions[]>([])
+  const { message: feedbackMessage } = useFeedback()
 
   async function fetchUsers() {
     try {
@@ -33,7 +34,7 @@ export function useUserManagement() {
       }))
     } catch (error) {
       console.error('获取用户列表失败:', error)
-      message.error('获取用户列表失败')
+      feedbackMessage.error('获取用户列表失败')
     } finally {
       loading.value = false
     }
@@ -45,7 +46,7 @@ export function useUserManagement() {
       return await PermissionsApi.getUserPermissions(userId)
     } catch (error) {
       console.error('获取用户权限信息失败:', error)
-      message.error('获取用户权限信息失败')
+      feedbackMessage.error('获取用户权限信息失败')
       return null
     } finally {
       loading.value = false
@@ -66,12 +67,12 @@ export function useUserManagement() {
       const permissionsData: AssignUserPermissionsDto = { permissionIds }
       await PermissionsApi.assignUserPermissions(userId, permissionsData)
 
-      message.success('更新成功')
+      feedbackMessage.success('更新成功')
       await fetchUsers()
       return true
     } catch (error) {
       console.error('更新失败:', error)
-      message.error('更新失败')
+      feedbackMessage.error('更新失败')
       return false
     } finally {
       loading.value = false

@@ -1,11 +1,7 @@
 <template>
   <div class="error-container">
     <a-card class="error-card" title="403 - 禁止访问">
-      <a-result
-        status="403"
-        title="403 Forbidden"
-        sub-title="抱歉，您没有权限访问此页面。"
-      >
+      <a-result status="403" title="403 Forbidden" sub-title="抱歉，您没有权限访问此页面。">
         <template #extra>
           <a-button type="primary" @click="goHome">返回首页</a-button>
         </template>

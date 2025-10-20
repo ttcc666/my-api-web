@@ -1,4 +1,4 @@
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useOnlineUserStore } from '@/stores/modules/hub/onlineUser'
 import type { OnlineUserQueryParams, OnlineUserStatus } from '@/types/api'

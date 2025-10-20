@@ -14,9 +14,7 @@ export class OnlineUsersApi {
   /**
    * 查询在线用户列表
    */
-  static async getOnlineUsers(
-    params?: OnlineUserQueryParams,
-  ): Promise<OnlineUserListResponseDto> {
+  static async getOnlineUsers(params?: OnlineUserQueryParams): Promise<OnlineUserListResponseDto> {
     return apiClient.get('/online-users', { params })
   }
 
