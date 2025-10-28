@@ -242,3 +242,4 @@ Temporary Items
 *.old
 *.orig
 *.save
+.claude/

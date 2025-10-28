@@ -29,8 +29,17 @@ namespace MyApiWeb.Services.Implements.System
             _logger = logger;
         }
 
-        public async Task<User> ValidateUserAsync(string username, string password)
+        public async Task<User> ValidateUserAsync(string username, string password, string captchaCode)
         {
+            // 这里可以添加验证码验证逻辑
+            // 如果使用验证码服务，可以注入并验证
+            // 目前简单验证非空，实际项目中应该调用验证码服务验证
+
+            if (string.IsNullOrWhiteSpace(captchaCode))
+            {
+                throw new InvalidOperationException("验证码不能为空");
+            }
+
             var user = await _userRepository.FirstOrDefaultAsync(u => u.Username == username);
             if (user == null || !VerifyPassword(password, user.PasswordHash))
             {

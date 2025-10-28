@@ -19,6 +19,7 @@ export { PermissionsApi, default as PermissionsApiDefault } from './modules/syst
 export { MenusApi, default as MenusApiDefault } from './modules/system/menus'
 export { DeviceApi, default as DeviceApiDefault } from './modules/system/device'
 export { OnlineUsersApi, default as OnlineUsersApiDefault } from './modules/hub/onlineUsers'
+export { captchaApi } from './modules/common/captcha'
 
 // 重新导出类型
 export type * from '@/types/api'

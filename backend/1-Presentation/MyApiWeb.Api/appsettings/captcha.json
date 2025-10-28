@@ -1,0 +1,27 @@
+{
+  "Captcha": {
+    "CaptchaType": 4,
+    "Option": {
+      "IgnoreCase": true,
+      "MaxCharacterCount": 4,
+      "MinCharacterCount": 4
+    },
+    "Storage": "Memory",
+    "ExpiryTime": 300,
+    "ImageOption": {
+      "Width": 120,
+      "Height": 45,
+      "BubbleMinRadius": 2,
+      "BubbleMaxRadius": 5,
+      "BubbleCount": 30,
+      "LineCount": 4,
+      "FrameDelay": 30,
+      "FontSize": 28,
+      "FontFamily": "Arial",
+      "BackgroundColor": "#FFFFFF",
+      "ForegroundColor": "#000000",
+      "Complexity": "Medium",
+      "AnimationType": "Slice"
+    }
+  }
+}

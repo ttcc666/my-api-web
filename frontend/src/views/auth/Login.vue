@@ -8,6 +8,14 @@
         <a-form-item name="password" label="密码">
           <a-input-password v-model:value="formState.password" placeholder="请输入密码" />
         </a-form-item>
+
+        <!-- 验证码组件 -->
+        <CaptchaInput
+          v-model:captchaCode="formState.captchaCode"
+          v-model:captchaValid="captchaValid"
+          @press-enter="handleLogin"
+        />
+
         <a-form-item>
           <a-button type="primary" block :loading="loading" @click="handleLogin">登录</a-button>
         </a-form-item>
@@ -23,6 +31,7 @@ import type { FormInstance } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/modules/auth/auth'
 import { useFeedback } from '@/composables/useFeedback'
+import CaptchaInput from '@/components/common/CaptchaInput.vue'
 
 defineOptions({
   name: 'UserLogin',
@@ -32,11 +41,23 @@ const formRef = ref<FormInstance>()
 const formState = reactive({
   username: '',
   password: '',
+  captchaCode: '',
 })
+
+const captchaValid = ref(false)
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  captchaCode: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    {
+      validator: () => {
+        return captchaValid.value || Promise.reject('验证码错误')
+      },
+      trigger: 'blur'
+    }
+  ],
 }
 
 const authStore = useAuthStore()
@@ -52,10 +73,17 @@ async function handleLogin(event: MouseEvent) {
     return
   }
 
+  // 验证验证码
+  if (!captchaValid.value) {
+    feedbackMessage.error('请输入正确的验证码')
+    return
+  }
+
   loading.value = true
   const success = await authStore.login({
     username: formState.username,
     password: formState.password,
+    captchaCode: formState.captchaCode,
   })
   loading.value = false
 
@@ -64,6 +92,11 @@ async function handleLogin(event: MouseEvent) {
     router.push('/')
   } else {
     feedbackMessage.error(authStore.error || '登录失败')
+    // 登录失败时刷新验证码
+    const captchaComponent = formRef.value?.querySelector?.('captcha-input')
+    if (captchaComponent?.refreshCaptcha) {
+      captchaComponent.refreshCaptcha()
+    }
   }
 }
 </script>

@@ -28,3 +28,6 @@ export interface ApiError {
 export interface ExistsResponseDto {
   exists: boolean
 }
+
+// 导出验证码相关类型
+export type { CaptchaResponse, CaptchaValidateRequest, CaptchaValidateResponse } from './captcha'

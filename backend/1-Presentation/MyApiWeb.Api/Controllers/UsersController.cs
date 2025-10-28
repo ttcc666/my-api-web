@@ -106,7 +106,7 @@ namespace MyApiWeb.Api.Controllers
                     return ValidationError(ModelState);
                 }
 
-                var user = await _service.ValidateUserAsync(loginDto.Username, loginDto.Password);
+                var user = await _service.ValidateUserAsync(loginDto.Username, loginDto.Password, loginDto.CaptchaCode);
                 var tokens = await _tokenService.GenerateTokensAsync(user);
 
                 return Success(tokens, "登录成功");

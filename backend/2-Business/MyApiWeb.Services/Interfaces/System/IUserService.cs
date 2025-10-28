@@ -16,8 +16,9 @@ namespace MyApiWeb.Services.Interfaces.System
         /// </summary>
         /// <param name="username">用户名</param>
         /// <param name="password">密码</param>
+        /// <param name="captchaCode">验证码</param>
         /// <returns>验证成功则返回用户实体，否则返回null</returns>
-        Task<User> ValidateUserAsync(string username, string password);
+        Task<User> ValidateUserAsync(string username, string password, string captchaCode);
 
         /// <summary>
         /// 用户注册
